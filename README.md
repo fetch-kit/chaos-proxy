@@ -14,7 +14,7 @@ Chaos Proxy is an Express-based proxy and CLI tool for injecting configurable ne
 
 - Simple configuration via a single `chaos.yaml` file
 - Programmatic API and CLI usage
-- Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit
+- Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors
 - Built-in presets: slowNetwork, flakyApi
 - Extensible registry for custom middleware and presets
 - Method+path route support (e.g., `GET /api/cc`)
@@ -107,6 +107,7 @@ routes:
 - `failNth({ n, status, body })` — fail every nth request
 - `dropConnection({ prob })` — randomly drop connection
 - `rateLimit({ limit, windowMs, key })` — rate limiting (by IP, header, or custom)
+- `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
 
 ### Rate Limiting
 
@@ -123,6 +124,22 @@ How it works:
 - You can customize the keying strategy to rate-limit by IP, by a specific header (e.g., `Authorization`), or by any custom logic.
 
 This helps simulate API throttling, or test client retry logic under rate-limited conditions.
+
+### CORS
+
+The `cors` middleware enables Cross-Origin Resource Sharing (CORS) for your proxied API. By default, it allows all origins (`*`), methods (`GET,POST,PUT,DELETE,OPTIONS`), and headers (`Content-Type,Authorization`). You can customize these by providing string values:
+- `origin`: Allowed origin(s) as a string (e.g., `"https://example.com"`).
+- `methods`: Allowed HTTP methods as a comma-separated string (e.g., `"GET,POST"`).
+- `headers`: Allowed headers as a comma-separated string (e.g., `"Authorization,Content-Type"`).
+
+**Example:**
+```yaml
+global:
+  - cors:
+      origin: "https://example.com"
+      methods: "GET,POST"
+      headers: "Authorization,Content-Type"
+```
 
 ---
 

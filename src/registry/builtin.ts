@@ -1,3 +1,4 @@
+import { cors } from '../middlewares/cors.ts';
 import { registerMiddleware } from './middleware.ts';
 import { registerPreset } from './preset.ts';
 import { latency } from '../middlewares/latency.ts';
@@ -13,6 +14,7 @@ export function registerBuiltins() {
   registerMiddleware('failRandomly', (opts) => failRandomly(opts as { rate: number, status?: number, body?: string }));
   registerMiddleware('dropConnection', (opts) => dropConnection(opts as { prob?: number }));
   registerMiddleware('fail', (opts) => fail(opts as { status?: number, body?: string }));
+  registerMiddleware('cors', (opts) => cors(opts as { origin?: string; methods?: string; headers?: string }));
 
   // Register built-in presets
   registerPreset('slowNetwork', [
