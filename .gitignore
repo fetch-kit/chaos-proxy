@@ -1,0 +1,27 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# VS Code
+.vscode/
+
+# Misc
+*.log
+*.tmp
+
+# Examples output
+examples/**/*.log
+examples/**/*.tmp

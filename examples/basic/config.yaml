@@ -1,0 +1,3 @@
+# Minimal working config for chaos-proxy
+port: 8080
+target: http://localhost:3000

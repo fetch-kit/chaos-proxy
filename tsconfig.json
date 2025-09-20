@@ -1,0 +1,27 @@
+
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "outDir": "./dist",
+    "target": "esnext",
+    "types": ["node"],
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+  "skipLibCheck": true,
+  "allowSyntheticDefaultImports": true,
+  "esModuleInterop": true,
+  "module": "ESNext",
+  "moduleResolution": "node"
+  },
+  "include": ["src", "vitest.config.ts"]
+}

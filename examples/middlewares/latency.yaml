@@ -1,0 +1,5 @@
+# Example config using latency middleware
+port: 8080
+target: http://localhost:3000
+global:
+  - latency: { ms: 500 }

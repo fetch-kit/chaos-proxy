@@ -1,0 +1,8 @@
+# Config showing error handling
+port: 8080
+target: http://localhost:3000
+global:
+  - latency: { ms: 100 }
+routes:
+  /fail:
+    - invalidMiddleware: {}

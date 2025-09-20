@@ -1,0 +1,10 @@
+# Config with multiple routes and global middlewares
+port: 8080
+target: http://localhost:3000
+global:
+  - latency: { ms: 200 }
+routes:
+  /api:
+    - rateLimit: { windowMs: 60000, max: 5 }
+  /admin:
+    - latency: { ms: 1000 }

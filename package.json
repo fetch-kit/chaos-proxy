@@ -1,0 +1,61 @@
+{
+  "name": "chaos-proxy",
+  "version": "1.0.0",
+  "description": "Express-based proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "bin": {
+    "chaos-proxy": "bin/chaos-proxy.js"
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "test": "vitest",
+    "dev": "ts-node --esm src/index.ts"
+  },
+  "keywords": [
+    "proxy",
+    "chaos",
+    "express",
+    "testing",
+    "network",
+    "typescript",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7",
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^24.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "yaml": "^2.8.1"
+  }
+}

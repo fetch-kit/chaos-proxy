@@ -1,0 +1,5 @@
+# Example config using rate limiting middleware
+port: 8080
+target: http://localhost:3000
+global:
+  - rateLimit: { windowMs: 60000, max: 10 }
