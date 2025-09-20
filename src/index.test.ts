@@ -44,7 +44,8 @@ describe('src/index.ts', () => {
 
   it('handles missing config file error', async () => {
     const { loadConfig } = await vi.importMock('./config/loader.ts');
-    (loadConfig as any).mockImplementation(() => { throw new Error('Config file not found'); });
+    // Use a type assertion for Vitest mock function
+    (loadConfig as unknown as { mockImplementation: (fn: () => unknown) => void }).mockImplementation(() => { throw new Error('Config file not found'); });
     process.argv = ['node', 'index.js'];
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
     await expect(async () => {

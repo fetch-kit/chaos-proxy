@@ -8,11 +8,11 @@ import { fail } from '../middlewares/fail.ts';
 
 export function registerBuiltins() {
   // Register built-in middleware primitives
-  registerMiddleware('latency', (opts) => latency(opts));
-  registerMiddleware('latencyRange', (opts) => latencyRange(opts.minMs, opts.maxMs));
-  registerMiddleware('failRandomly', (opts) => failRandomly(opts));
-  registerMiddleware('dropConnection', (opts) => dropConnection(opts));
-  registerMiddleware('fail', (opts) => fail(opts));
+  registerMiddleware('latency', (opts) => latency((opts.ms as number)));
+  registerMiddleware('latencyRange', (opts) => latencyRange((opts.minMs as number), (opts.maxMs as number)));
+  registerMiddleware('failRandomly', (opts) => failRandomly(opts as { rate: number, status?: number, body?: string }));
+  registerMiddleware('dropConnection', (opts) => dropConnection(opts as { prob?: number }));
+  registerMiddleware('fail', (opts) => fail(opts as { status?: number, body?: string }));
 
   // Register built-in presets
   registerPreset('slowNetwork', [

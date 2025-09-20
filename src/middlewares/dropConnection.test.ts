@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { dropConnection } from './dropConnection';
+import type { Request, Response } from 'express';
 
 describe('dropConnection middleware', () => {
   it('destroys socket with given probability', () => {
@@ -12,11 +13,11 @@ describe('dropConnection middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next = vi.fn();
     const mw = dropConnection({ prob: 0.2 });
-  const req = { get: () => undefined, header: () => undefined } as any;
-  mw(req, res, next);
+    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
+    mw(req, res, next);
     expect(destroy).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
@@ -30,12 +31,12 @@ describe('dropConnection middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next2 = vi.fn();
     const mw = dropConnection({ prob: 0.2 });
-  const req2 = { get: () => undefined, header: () => undefined } as any;
+    const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw(req2, res2, next2);
-  expect(next2).toHaveBeenCalled();
+    expect(next2).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
   it('ends response if no socket', () => {
@@ -47,10 +48,10 @@ describe('dropConnection middleware', () => {
       send: () => res3,
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next3 = vi.fn();
     const mw = dropConnection({ prob: 1 });
-  const req3 = { get: () => undefined, header: () => undefined } as any;
+    const req3 = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw(req3, res3, next3);
     expect(end).toHaveBeenCalled();
     vi.restoreAllMocks();

@@ -1,9 +1,11 @@
 import { describe, it, beforeAll, afterAll, expect, vi } from 'vitest';
 import express from 'express';
+import type { Request, Response as ExpressResponse, NextFunction } from 'express';
+import type { Server } from 'http';
 import { startServer } from './server';
 
-let testServer: any;
-let proxyServer: any;
+let testServer: Server;
+let proxyServer: Server;
 const TEST_PORT = 8001;
 const PROXY_PORT = 8002;
 const TARGET = `http://localhost:${TEST_PORT}`;
@@ -39,7 +41,7 @@ function startProxyServer() {
   return startServer({ target: TARGET, port: PROXY_PORT });
 }
 
-async function compareResponses(direct: Response, proxied: Response) {
+async function compareResponses(direct: globalThis.Response, proxied: globalThis.Response) {
   expect(proxied.status).toBe(direct.status);
   expect(proxied.headers.get('content-type')).toBe(direct.headers.get('content-type'));
   const directBody = await direct.text();
@@ -47,7 +49,7 @@ async function compareResponses(direct: Response, proxied: Response) {
   expect(proxiedBody).toBe(directBody);
 }
 
-async function compareJsonResponses(direct: Response, proxied: Response) {
+async function compareJsonResponses(direct: globalThis.Response, proxied: globalThis.Response) {
   expect(proxied.status).toBe(direct.status);
   expect(proxied.headers.get('content-type')).toBe(direct.headers.get('content-type'));
   const directJson = await direct.json();
@@ -61,8 +63,8 @@ describe('Proxy server', () => {
     proxyServer = startProxyServer();
   });
   afterAll(() => {
-    testServer.close();
-    proxyServer.close();
+  testServer.close();
+  proxyServer.close();
   });
 
   it('GET /api/cc returns same as direct', async () => {
@@ -126,7 +128,7 @@ describe('Proxy server', () => {
 
 describe('startServer edge cases', () => {
   it('mounts global middlewares', async () => {
-    const globalMiddleware = (req: any, res: any, next: any) => {
+  const globalMiddleware = (req: Request, res: ExpressResponse, next: NextFunction) => {
       res.set('X-Global', 'yes');
       next();
     };
@@ -140,14 +142,14 @@ describe('startServer edge cases', () => {
     // Patch resolveConfigMiddlewares to return our config
     const serverModule = await import('./server');
     vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
-    const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {});
+  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 1}/api/cc`);
     expect(res.headers.get('x-global')).toBe('yes');
-    if (app) { app.close(); }
+    app.close();
   });
 
   it('mounts route middlewares with method support', async () => {
-    const mw = (req: any, res: any, next: any) => {
+  const mw = (req: Request, res: ExpressResponse, next: NextFunction) => {
       res.set('X-Route', 'yes');
       next();
     };
@@ -159,10 +161,10 @@ describe('startServer edge cases', () => {
     };
     vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
-    const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {});
+  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 2}/api/cc`);
     expect(res.headers.get('x-route')).toBe('yes');
-    if (app) { app.close(); }
+    app.close();
   });
 
   it('logs verbose output', async () => {
@@ -175,10 +177,10 @@ describe('startServer edge cases', () => {
     vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 4 }, { verbose: true });
+  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 4 }, { verbose: true }) as Server;
     await fetch(`http://localhost:${PROXY_PORT + 4}/api/cc`);
     expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/\[VERBOSE\] GET \/api\/cc/));
-    if (app) { app.close(); }
+    app.close();
     logSpy.mockRestore();
   });
 
@@ -192,13 +194,13 @@ describe('startServer edge cases', () => {
     vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    let app: any;
+  let app: Server | undefined = undefined;
     await new Promise((resolve) => {
       app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 5 }, {});
       setTimeout(resolve, 100); // Wait for listen callback
     });
     expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/Chaos Proxy listening on port/));
-    if (app) { app.close(); }
+  if (app) (app as Server).close();
     logSpy.mockRestore();
   });
 });

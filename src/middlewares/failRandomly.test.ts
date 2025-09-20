@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { failRandomly } from './failRandomly';
+import type { Request, Response } from 'express';
 
 describe('failRandomly middleware', () => {
   it('fails with given probability', () => {
@@ -12,10 +13,10 @@ describe('failRandomly middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next = vi.fn();
     const mw = failRandomly({ rate: 0.2, status: 400, body: 'fail!' });
-    const req = { get: () => undefined, header: () => undefined } as any;
+    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw(req, res, next);
     expect(status).toHaveBeenCalledWith(400);
     expect(send).toHaveBeenCalledWith('fail!');
@@ -23,18 +24,16 @@ describe('failRandomly middleware', () => {
   });
   it('calls next if not failing', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.9);
-    const send2 = vi.fn();
-    const status2 = vi.fn(() => res2);
     const res2 = {
-      status: status2,
-      send: send2,
-      end: vi.fn(),
-      setHeader: vi.fn(),
-      json: vi.fn(),
-    } as any;
+      status: () => res2,
+      send: () => res2,
+      end: () => res2,
+      setHeader: () => res2,
+      json: () => res2,
+    } as unknown as Response;
     const next2 = vi.fn();
     const mw2 = failRandomly({ rate: 0.2 });
-    const req2 = { get: () => undefined, header: () => undefined } as any;
+    const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw2(req2, res2, next2);
     expect(next2).toHaveBeenCalled();
     vi.restoreAllMocks();

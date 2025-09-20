@@ -3,6 +3,7 @@ import { parseConfig, resolveConfigMiddlewares } from './parser.ts';
 import { registerPreset } from '../registry/preset';
 import { registerMiddleware } from '../registry/middleware';
 import type { RequestHandler } from 'express';
+import type { ChaosConfig } from './loader.ts';
 
 describe('parseConfig', () => {
   it('parses a valid config with default port', () => {
@@ -35,45 +36,45 @@ describe('parseConfig', () => {
 
 describe('resolveConfigMiddlewares', () => {
   it('handles empty config', () => {
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000 } as any);
+    const result = resolveConfigMiddlewares({ target: 'x', port: 5000 } as ChaosConfig);
     expect(result.global).toEqual([]);
     expect(result.routes).toEqual({});
   });
 
   it('handles config with no routes', () => {
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [] } as any);
+    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [] } as ChaosConfig);
     expect(result.global).toEqual([]);
     expect(result.routes).toEqual({});
   });
 
   it('handles preset in global', () => {
     registerPreset('testPreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: ['preset:testPreset'] } as any);
+    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: ['preset:testPreset'] } as ChaosConfig);
     expect(result.global.length).toBe(1);
   });
 
   it('handles preset in routes', () => {
     registerPreset('routePreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, routes: { '/foo': ['preset:routePreset'] } } as any);
-  expect(Array.isArray(result.routes['/foo'])).toBe(true);
-  expect(result.routes['/foo']?.length).toBe(1);
+    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, routes: { '/foo': ['preset:routePreset'] } } as ChaosConfig);
+    expect(Array.isArray(result.routes['/foo'])).toBe(true);
+    expect(result.routes['/foo']?.length).toBe(1);
   });
 
   it('handles valid middleware node in global', () => {
     registerMiddleware('mock', () => ((req, res, next) => next()) as RequestHandler);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ mock: {} }] } as any);
+    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ mock: {} }] } as ChaosConfig);
     expect(result.global.length).toBe(1);
   });
 
   it('throws for invalid middleware node', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [123] } as any)).toThrow();
+    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [123] } as ChaosConfig)).toThrow();
   });
 
   it('throws for multiple keys in middleware node', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ a: {}, b: {} }] } as any)).toThrow();
+    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ a: {}, b: {} }] } as ChaosConfig)).toThrow();
   });
 
   it('throws for unknown middleware', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ notRegistered: {} }] } as any)).toThrow();
+    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ notRegistered: {} }] } as ChaosConfig)).toThrow();
   });
 });

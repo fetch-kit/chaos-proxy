@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { failNth } from './failNth';
+import type { Request, Response } from 'express';
 
 describe('failNth middleware', () => {
   it('fails on the nth request and resets', () => {
@@ -11,10 +12,10 @@ describe('failNth middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next = vi.fn();
     const mw = failNth({ n: 3, status: 500, body: 'fail!' });
-    const req = { get: () => undefined, header: () => undefined } as any;
+    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw(req, res, next); // 1
     mw(req, res, next); // 2
     mw(req, res, next); // 3 - should fail
@@ -35,10 +36,10 @@ describe('failNth middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const next2 = vi.fn();
     const mw2 = failNth({ n: 2 });
-    const req2 = { get: () => undefined, header: () => undefined } as any;
+    const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw2(req2, res2, next2); // 1
     mw2(req2, res2, next2); // 2 - should fail
       expect(status2).toHaveBeenCalledWith(500);

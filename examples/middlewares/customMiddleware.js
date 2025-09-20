@@ -1,5 +1,5 @@
 // Example of a custom middleware for chaos-proxy
-const { registerMiddleware } = require('../../src/registry/middleware');
+import { registerMiddleware } from '../../src/registry/middleware';
 
 // Define your custom middleware
 function customLogger(req, res, next) {

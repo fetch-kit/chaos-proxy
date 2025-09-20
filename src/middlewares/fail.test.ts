@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fail } from './fail';
+import type { Request, Response } from 'express';
 
 describe('fail middleware', () => {
   it('responds with status and body', () => {
@@ -11,10 +12,10 @@ describe('fail middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const mw = fail({ status: 418, body: 'fail!' });
-    const req = { get: () => undefined, header: () => undefined } as any;
-    mw(req, res, vi.fn());
+    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
+  mw(req, res, vi.fn());
     expect(status).toHaveBeenCalledWith(418);
     expect(send).toHaveBeenCalledWith('fail!');
   });
@@ -27,10 +28,10 @@ describe('fail middleware', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       json: vi.fn(),
-    } as any;
+    } as unknown as Response;
     const mw2 = fail({});
-    const req2 = { get: () => undefined, header: () => undefined } as any;
-    mw2(req2, res2, vi.fn());
+    const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
+  mw2(req2, res2, vi.fn());
       expect(status2).toHaveBeenCalledWith(503);
       expect(send2).toHaveBeenCalledWith('Failed by chaos-proxy');
   });

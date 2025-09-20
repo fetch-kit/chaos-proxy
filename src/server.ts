@@ -22,7 +22,7 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     if (methodPathMatch && methodPathMatch[1] && methodPathMatch[2]) {
       const method = methodPathMatch[1].toLowerCase();
       const path = methodPathMatch[2];
-      const expressApp: any = app;
+  const expressApp = app as unknown as Record<string, (...args: unknown[]) => void>;
       if (typeof expressApp[method] === 'function') {
         expressApp[method](path, ...middlewares);
       } else {
@@ -47,8 +47,8 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     // Remove host header to avoid conflicts
     delete headers.host;
 
-    let body: any = undefined;
-    let fetchOptions: any = {
+    let body: unknown = undefined;
+    const fetchOptions: Record<string, unknown> = {
       method,
       headers,
       redirect: 'manual',
@@ -60,7 +60,6 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     }
 
     if (options?.verbose) {
-      // eslint-disable-next-line no-console
       console.log(`[VERBOSE] ${method} ${req.originalUrl}`);
     }
 
@@ -78,7 +77,6 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
   });
 
   return app.listen(config.port ?? 5000, () => {
-    // eslint-disable-next-line no-console
     console.log(`Chaos Proxy listening on port ${config.port ?? 5000} -> target ${config.target}`);
   });
 }

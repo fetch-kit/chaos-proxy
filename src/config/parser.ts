@@ -5,7 +5,7 @@ import type { ChaosConfig } from './loader.ts';
 import type { RequestHandler } from 'express';
 
 export function parseConfig(yamlString: string): ChaosConfig {
-  let parsed: any;
+  let parsed: unknown;
   try {
     parsed = yaml.parse(yamlString);
   } catch (e) {
@@ -15,25 +15,26 @@ export function parseConfig(yamlString: string): ChaosConfig {
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('Config must be a YAML object');
   }
-  if (!parsed.target || typeof parsed.target !== 'string') {
+  const config = parsed as Record<string, unknown>;
+  if (!config.target || typeof config.target !== 'string') {
     throw new Error('Config must include a string "target" field');
   }
-  if (parsed.global && !Array.isArray(parsed.global)) {
+  if (config.global && !Array.isArray(config.global)) {
     throw new Error('Config "global" must be an array');
   }
-  if (parsed.routes && typeof parsed.routes !== 'object') {
+  if (config.routes && typeof config.routes !== 'object') {
     throw new Error('Config "routes" must be a map of path to array');
   }
-  for (const [route, nodes] of Object.entries(parsed.routes || {})) {
+  for (const [route, nodes] of Object.entries(config.routes || {})) {
     if (!Array.isArray(nodes)) {
       throw new Error(`Route "${route}" must map to an array of middleware nodes`);
     }
   }
   // Default port to 5000 if not specified
-  if (!parsed.port) {
-    parsed.port = 5000;
+  if (!config.port) {
+    config.port = 5000;
   }
-  return parsed as ChaosConfig;
+  return config as ChaosConfig;
 }
 
 export function resolveConfigMiddlewares(config: ChaosConfig): { global: RequestHandler[], routes: Record<string, RequestHandler[]> } {
@@ -47,7 +48,7 @@ export function resolveConfigMiddlewares(config: ChaosConfig): { global: Request
         const presetName = node.slice(7);
         global.push(...resolvePreset(presetName));
       } else {
-        global.push(resolveMiddleware(node));
+        global.push(resolveMiddleware(node as Record<string, unknown>));
       }
     }
   }
@@ -61,7 +62,7 @@ export function resolveConfigMiddlewares(config: ChaosConfig): { global: Request
           const presetName = node.slice(7);
           chain.push(...resolvePreset(presetName));
         } else {
-          chain.push(resolveMiddleware(node));
+          chain.push(resolveMiddleware(node as Record<string, unknown>));
         }
       }
       routes[route] = chain;
