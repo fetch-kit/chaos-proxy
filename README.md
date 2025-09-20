@@ -1,3 +1,9 @@
+[![npm](https://img.shields.io/npm/v/chaos-proxy)](https://www.npmjs.com/package/chaos-proxy)
+[![Downloads](https://img.shields.io/npm/dm/chaos-proxy)](https://www.npmjs.com/package/chaos-proxy)
+[![GitHub stars](https://img.shields.io/github/stars/gkoos/chaos-proxy?style=social)](https://github.com/gkoos/chaos-proxy)
+[![Build](https://github.com/gkoos/chaos-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/gkoos/chaos-proxy/actions)
+[![codecov](https://codecov.io/gh/gkoos/chaos-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/gkoos/chaos-proxy)
+
 # Chaos Proxy
 
 Chaos Proxy is an Express-based proxy and CLI tool for injecting configurable network chaos (latency, failures, connection drops, rate-limiting, etc.) into API requests. It applies ordered middleware (global and per-route) and forwards to your target API, preserving method, path, headers, query, and body.
@@ -72,22 +78,22 @@ await server.close();
 target: "http://localhost:4000"
 port: 5000
 global:
-	- latency: 100
-	- preset:slowNetwork
-	- failRandomly:
-			rate: 0.1
-			status: 503
+  - latency: 100
+  - preset:slowNetwork
+  - failRandomly:
+      rate: 0.1
+      status: 503
 routes:
-	"GET /users/:id":
-		- preset:slowNetwork
-		- failRandomly:
-				rate: 0.2
-				status: 503
-	"/users/:id/orders":
-		- preset:flakyApi
-		- failNth:
-				n: 3
-				status: 500
+  "GET /users/:id":
+    - preset:slowNetwork
+    - failRandomly:
+        rate: 0.2
+        status: 503
+  "/users/:id/orders":
+    - preset:flakyApi
+    - failNth:
+        n: 3
+        status: 500
 ```
 
 ---

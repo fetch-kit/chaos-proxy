@@ -1,6 +1,6 @@
 {
   "name": "chaos-proxy",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Express-based proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,14 @@
     "typescript",
     "cli"
   ],
-  "author": "",
+  "author": "Gabor Koos <gkoos@users.noreply.github.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gkoos/chaos-proxy.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "type": "module",
   "devDependencies": {
