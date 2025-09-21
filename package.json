@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "test": "vitest",
     "dev": "ts-node --esm src/index.ts",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "prepublishOnly": "npm run build && npm run test:ci"
   },
   "keywords": [
     "proxy",
