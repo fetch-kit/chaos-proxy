@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.3.1
+
+### Patch Changes
+
+- 6cf9d75: Fixed
+  - Executable build
+
 ## 0.3.0
 
 ### Minor Changes
