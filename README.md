@@ -15,8 +15,7 @@ Chaos Proxy is an Express-based proxy and CLI tool for injecting configurable ne
 - Simple configuration via a single `chaos.yaml` file
 - Programmatic API and CLI usage
 - Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors
-- Built-in presets: slowNetwork, flakyApi
-- Extensible registry for custom middleware and presets
+- Extensible registry for custom middleware
 - Method+path route support (e.g., `GET /api/cc`)
 - Robust short-circuiting: middlewares halt further processing when sending a response or dropping a connection
 
@@ -38,19 +37,15 @@ npm install chaos-proxy
 npx chaos-proxy --config chaos.yaml [--verbose]
 ```
 - `--config <path>`: YAML config file (default `./chaos.yaml`)
-- `--verbose`: print loaded middlewares, presets, and request logs
+- `--verbose`: print loaded middlewares,  and request logs
 
 ### Programmatic API
 
 ```ts
-import { loadConfig, startServer, registerMiddleware, registerPreset } from "chaos-proxy";
+import { loadConfig, startServer, registerMiddleware } from "chaos-proxy";
 
-// Register custom middleware or presets before starting the server
+// Register custom middleware before starting the server
 registerMiddleware('customDelay', (opts) => (req, res, next) => setTimeout(next, opts.ms));
-registerPreset('chaotic', [
-	latencyRange(100, 500),
-	failRandomly({ rate: 0.2, status: 500 })
-]);
 
 const cfg = loadConfig("chaos.yaml");
 const server = await startServer(cfg, { port: 5001 });
@@ -70,7 +65,7 @@ await server.close();
 - `port` (number, optional): Proxy listen port (default 5000)
 - `global`: Ordered array of middleware nodes applied to every request
 - `routes`: Map of path or method+path to ordered array of middleware nodes
-- Middleware node: Either an object (`latency: 100`), or a string starting with `preset:`
+- Middleware node: Object (`latency: 100`)
 
 ### Example
 
@@ -79,18 +74,15 @@ target: "http://localhost:4000"
 port: 5000
 global:
   - latency: 100
-  - preset:slowNetwork
   - failRandomly:
       rate: 0.1
       status: 503
 routes:
   "GET /users/:id":
-    - preset:slowNetwork
     - failRandomly:
         rate: 0.2
         status: 503
   "/users/:id/orders":
-    - preset:flakyApi
     - failNth:
         n: 3
         status: 500
@@ -143,28 +135,9 @@ global:
 
 ---
 
-## Presets
-
-Presets are named arrays of middleware instances, referenced via `preset:<name>` in YAML.
-
-**Built-in presets:**
-- `slowNetwork`: latencyRange(300, 1200), failRandomly({ rate: 0.05, status: 504 })
-- `flakyApi`: failRandomly({ rate: 0.3, status: 503 }), dropConnection({ prob: 0.05 })
-
-**User-defined presets:**
-```ts
-registerPreset("chaotic", [
-	latencyRange(100, 500),
-	failRandomly({ rate: 0.2, status: 500 })
-]);
-```
-
----
-
 ## Extensibility
 
 - Register custom middleware: `registerMiddleware(name, factory)`
-- Register custom presets: `registerPreset(name, [middlewares])`
 
 ---
 

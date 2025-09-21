@@ -5,7 +5,6 @@ This folder contains sample configs and scripts for using chaos-proxy.
 ## Structure
 - **basic/**: Minimal config and run script
 - **middlewares/**: Usage of built-in and custom middlewares
-- **presets/**: Preset usage and definition
 - **advanced/**: Multi-route and error handling scenarios
 
 ## How to Run

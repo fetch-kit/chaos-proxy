@@ -1,5 +1,0 @@
-# Config using a preset
-port: 8080
-target: http://localhost:3000
-global:
-  - "preset:basicChaos"

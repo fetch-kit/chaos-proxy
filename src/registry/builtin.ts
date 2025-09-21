@@ -1,6 +1,6 @@
 import { cors } from '../middlewares/cors';
 import { registerMiddleware } from './middleware';
-import { registerPreset } from './preset';
+// ...existing code...
 import { latency } from '../middlewares/latency';
 import { latencyRange } from '../middlewares/latencyRange';
 import { failRandomly } from '../middlewares/failRandomly';
@@ -21,14 +21,4 @@ export function registerBuiltins() {
   registerMiddleware('cors', (opts) =>
     cors(opts as { origin?: string; methods?: string; headers?: string })
   );
-
-  // Register built-in presets
-  registerPreset('slowNetwork', [
-    latencyRange(300, 1200),
-    failRandomly({ rate: 0.05, status: 504 }),
-  ]);
-  registerPreset('flakyApi', [
-    failRandomly({ rate: 0.3, status: 503 }),
-    dropConnection({ prob: 0.05 }),
-  ]);
 }

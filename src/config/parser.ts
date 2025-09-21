@@ -1,6 +1,6 @@
 import yaml from 'yaml';
 import { resolveMiddleware } from '../registry/middleware';
-import { resolvePreset } from '../registry/preset';
+// ...existing code...
 import type { ChaosConfig } from './loader';
 import type { RequestHandler } from 'express';
 
@@ -47,12 +47,7 @@ export function resolveConfigMiddlewares(config: ChaosConfig): {
   // Resolve global middlewares
   if (Array.isArray(config.global)) {
     for (const node of config.global) {
-      if (typeof node === 'string' && node.startsWith('preset:')) {
-        const presetName = node.slice(7);
-        global.push(...resolvePreset(presetName));
-      } else {
-        global.push(resolveMiddleware(node as Record<string, unknown>));
-      }
+      global.push(resolveMiddleware(node as Record<string, unknown>));
     }
   }
 
@@ -61,12 +56,7 @@ export function resolveConfigMiddlewares(config: ChaosConfig): {
     for (const [route, nodes] of Object.entries(config.routes)) {
       const chain: RequestHandler[] = [];
       for (const node of nodes) {
-        if (typeof node === 'string' && node.startsWith('preset:')) {
-          const presetName = node.slice(7);
-          chain.push(...resolvePreset(presetName));
-        } else {
-          chain.push(resolveMiddleware(node as Record<string, unknown>));
-        }
+        chain.push(resolveMiddleware(node as Record<string, unknown>));
       }
       routes[route] = chain;
     }

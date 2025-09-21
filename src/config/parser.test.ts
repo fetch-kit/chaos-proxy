@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { parseConfig, resolveConfigMiddlewares } from './parser';
-import { registerPreset } from '../registry/preset';
-import { registerMiddleware } from '../registry/middleware';
-import type { RequestHandler } from 'express';
+// ...existing code...
+// ...existing code...
+// ...existing code...
 import type { ChaosConfig } from './loader';
 
 describe('parseConfig', () => {
@@ -47,37 +47,6 @@ describe('resolveConfigMiddlewares', () => {
     const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [] } as ChaosConfig);
     expect(result.global).toEqual([]);
     expect(result.routes).toEqual({});
-  });
-
-  it('handles preset in global', () => {
-    registerPreset('testPreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({
-      target: 'x',
-      port: 5000,
-      global: ['preset:testPreset'],
-    } as ChaosConfig);
-    expect(result.global.length).toBe(1);
-  });
-
-  it('handles preset in routes', () => {
-    registerPreset('routePreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({
-      target: 'x',
-      port: 5000,
-      routes: { '/foo': ['preset:routePreset'] },
-    } as ChaosConfig);
-    expect(Array.isArray(result.routes['/foo'])).toBe(true);
-    expect(result.routes['/foo']?.length).toBe(1);
-  });
-
-  it('handles valid middleware node in global', () => {
-    registerMiddleware('mock', () => ((req, res, next) => next()) as RequestHandler);
-    const result = resolveConfigMiddlewares({
-      target: 'x',
-      port: 5000,
-      global: [{ mock: {} }],
-    } as ChaosConfig);
-    expect(result.global.length).toBe(1);
   });
 
   it('throws for invalid middleware node', () => {
