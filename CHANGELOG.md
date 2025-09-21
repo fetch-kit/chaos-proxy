@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.5.0
+
+### Minor Changes
+
+- b9880c6: Changed
+  - Use Node http/https for transparent proxy streaming
+
 ## 0.4.0
 
 ### Minor Changes
