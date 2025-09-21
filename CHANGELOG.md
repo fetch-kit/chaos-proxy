@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.2.1
+
+### Patch Changes
+
+- e4f56e9: Added
+  - prepublishOnly script added to package.json
+
 ## 0.2.0
 
 ### Minor Changes
