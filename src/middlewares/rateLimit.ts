@@ -1,7 +1,12 @@
 import rateLimitLib, { ipKeyGenerator } from 'express-rate-limit';
 import type { Request, RequestHandler } from 'express';
 
-export function rateLimit(opts: { limit: number, windowMs: number, key?: string | ((req: Request) => string), skipIpKeyCheck?: boolean }): RequestHandler {
+export function rateLimit(opts: {
+  limit: number;
+  windowMs: number;
+  key?: string | ((req: Request) => string);
+  skipIpKeyCheck?: boolean;
+}): RequestHandler {
   let keyGen: (req: Request) => string;
   if (typeof opts.key === 'function') {
     keyGen = (req: Request) => {
@@ -16,7 +21,7 @@ export function rateLimit(opts: { limit: number, windowMs: number, key?: string 
       return 'unknown';
     };
   } else {
-  keyGen = (req: Request) => ipKeyGenerator(req.ip ?? 'unknown');
+    keyGen = (req: Request) => ipKeyGenerator(req.ip ?? 'unknown');
   }
   return rateLimitLib({
     windowMs: opts.windowMs,

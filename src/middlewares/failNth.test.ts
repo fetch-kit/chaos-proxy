@@ -22,10 +22,11 @@ describe('failNth middleware', () => {
     expect(status).toHaveBeenCalledWith(500);
     expect(send).toHaveBeenCalledWith('fail!');
     // Counter resets, next call should not fail
-  status.mockClear(); send.mockClear();
-  mw(req, res, next); // 1 again
-  expect(status).not.toHaveBeenCalled();
-  expect(next).toHaveBeenCalled();
+    status.mockClear();
+    send.mockClear();
+    mw(req, res, next); // 1 again
+    expect(status).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
   });
   it('defaults to 500 and default body', () => {
     const send2 = vi.fn();
@@ -42,7 +43,7 @@ describe('failNth middleware', () => {
     const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
     mw2(req2, res2, next2); // 1
     mw2(req2, res2, next2); // 2 - should fail
-      expect(status2).toHaveBeenCalledWith(500);
-      expect(send2).toHaveBeenCalledWith('Failed on request #2');
+    expect(status2).toHaveBeenCalledWith(500);
+    expect(send2).toHaveBeenCalledWith('Failed on request #2');
   });
 });

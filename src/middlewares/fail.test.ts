@@ -15,7 +15,7 @@ describe('fail middleware', () => {
     } as unknown as Response;
     const mw = fail({ status: 418, body: 'fail!' });
     const req = { get: () => undefined, header: () => undefined } as unknown as Request;
-  mw(req, res, vi.fn());
+    mw(req, res, vi.fn());
     expect(status).toHaveBeenCalledWith(418);
     expect(send).toHaveBeenCalledWith('fail!');
   });
@@ -31,8 +31,8 @@ describe('fail middleware', () => {
     } as unknown as Response;
     const mw2 = fail({});
     const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
-  mw2(req2, res2, vi.fn());
-      expect(status2).toHaveBeenCalledWith(503);
-      expect(send2).toHaveBeenCalledWith('Failed by chaos-proxy');
+    mw2(req2, res2, vi.fn());
+    expect(status2).toHaveBeenCalledWith(503);
+    expect(send2).toHaveBeenCalledWith('Failed by chaos-proxy');
   });
 });

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 
-export function failNth(opts: { n: number, status?: number, body?: string }) {
+export function failNth(opts: { n: number; status?: number; body?: string }) {
   let count = 0;
   return function (req: Request, res: Response, next: NextFunction) {
     count++;

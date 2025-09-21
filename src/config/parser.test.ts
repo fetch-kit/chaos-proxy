@@ -30,7 +30,9 @@ describe('parseConfig', () => {
   });
 
   it('throws if route value is not array', () => {
-    expect(() => parseConfig('target: "x"\nroutes:\n  "/foo": 123')).toThrow(/must map to an array/);
+    expect(() => parseConfig('target: "x"\nroutes:\n  "/foo": 123')).toThrow(
+      /must map to an array/
+    );
   });
 });
 
@@ -49,32 +51,58 @@ describe('resolveConfigMiddlewares', () => {
 
   it('handles preset in global', () => {
     registerPreset('testPreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: ['preset:testPreset'] } as ChaosConfig);
+    const result = resolveConfigMiddlewares({
+      target: 'x',
+      port: 5000,
+      global: ['preset:testPreset'],
+    } as ChaosConfig);
     expect(result.global.length).toBe(1);
   });
 
   it('handles preset in routes', () => {
     registerPreset('routePreset', [((req, res, next) => next()) as RequestHandler]);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, routes: { '/foo': ['preset:routePreset'] } } as ChaosConfig);
+    const result = resolveConfigMiddlewares({
+      target: 'x',
+      port: 5000,
+      routes: { '/foo': ['preset:routePreset'] },
+    } as ChaosConfig);
     expect(Array.isArray(result.routes['/foo'])).toBe(true);
     expect(result.routes['/foo']?.length).toBe(1);
   });
 
   it('handles valid middleware node in global', () => {
     registerMiddleware('mock', () => ((req, res, next) => next()) as RequestHandler);
-    const result = resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ mock: {} }] } as ChaosConfig);
+    const result = resolveConfigMiddlewares({
+      target: 'x',
+      port: 5000,
+      global: [{ mock: {} }],
+    } as ChaosConfig);
     expect(result.global.length).toBe(1);
   });
 
   it('throws for invalid middleware node', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [123] } as ChaosConfig)).toThrow();
+    expect(() =>
+      resolveConfigMiddlewares({ target: 'x', port: 5000, global: [123] } as ChaosConfig)
+    ).toThrow();
   });
 
   it('throws for multiple keys in middleware node', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ a: {}, b: {} }] } as ChaosConfig)).toThrow();
+    expect(() =>
+      resolveConfigMiddlewares({
+        target: 'x',
+        port: 5000,
+        global: [{ a: {}, b: {} }],
+      } as ChaosConfig)
+    ).toThrow();
   });
 
   it('throws for unknown middleware', () => {
-    expect(() => resolveConfigMiddlewares({ target: 'x', port: 5000, global: [{ notRegistered: {} }] } as ChaosConfig)).toThrow();
+    expect(() =>
+      resolveConfigMiddlewares({
+        target: 'x',
+        port: 5000,
+        global: [{ notRegistered: {} }],
+      } as ChaosConfig)
+    ).toThrow();
   });
 });

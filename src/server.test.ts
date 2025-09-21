@@ -63,8 +63,8 @@ describe('Proxy server', () => {
     proxyServer = startProxyServer();
   });
   afterAll(() => {
-  testServer.close();
-  proxyServer.close();
+    testServer.close();
+    proxyServer.close();
   });
 
   it('GET /api/cc returns same as direct', async () => {
@@ -128,7 +128,7 @@ describe('Proxy server', () => {
 
 describe('startServer edge cases', () => {
   it('mounts global middlewares', async () => {
-  const globalMiddleware = (req: Request, res: ExpressResponse, next: NextFunction) => {
+    const globalMiddleware = (req: Request, res: ExpressResponse, next: NextFunction) => {
       res.set('X-Global', 'yes');
       next();
     };
@@ -141,15 +141,15 @@ describe('startServer edge cases', () => {
     };
     // Patch resolveConfigMiddlewares to return our config
     const serverModule = await import('./server');
-  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
-  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {}) as Server;
+    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 1}/api/cc`);
     expect(res.headers.get('x-global')).toBe('yes');
     app.close();
   });
 
   it('mounts route middlewares with method support', async () => {
-  const mw = (req: Request, res: ExpressResponse, next: NextFunction) => {
+    const mw = (req: Request, res: ExpressResponse, next: NextFunction) => {
       res.set('X-Route', 'yes');
       next();
     };
@@ -159,9 +159,9 @@ describe('startServer edge cases', () => {
       global: [],
       routes: { 'GET /api/cc': [mw] },
     };
-  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
-  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {}) as Server;
+    const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 2}/api/cc`);
     expect(res.headers.get('x-route')).toBe('yes');
     app.close();
@@ -174,10 +174,13 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 4 }, { verbose: true }) as Server;
+    const app = serverModule.startServer(
+      { target: TARGET, port: PROXY_PORT + 4 },
+      { verbose: true }
+    ) as Server;
     await fetch(`http://localhost:${PROXY_PORT + 4}/api/cc`);
     expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/\[VERBOSE\] GET \/api\/cc/));
     app.close();
@@ -191,16 +194,16 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  let app: Server | undefined = undefined;
+    let app: Server | undefined = undefined;
     await new Promise((resolve) => {
       app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 5 }, {});
       setTimeout(resolve, 100); // Wait for listen callback
     });
     expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/Chaos Proxy listening on port/));
-  if (app) (app as Server).close();
+    if (app) (app as Server).close();
     logSpy.mockRestore();
   });
 });

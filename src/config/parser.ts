@@ -37,7 +37,10 @@ export function parseConfig(yamlString: string): ChaosConfig {
   return config as ChaosConfig;
 }
 
-export function resolveConfigMiddlewares(config: ChaosConfig): { global: RequestHandler[], routes: Record<string, RequestHandler[]> } {
+export function resolveConfigMiddlewares(config: ChaosConfig): {
+  global: RequestHandler[];
+  routes: Record<string, RequestHandler[]>;
+} {
   const global: RequestHandler[] = [];
   const routes: Record<string, RequestHandler[]> = {};
 

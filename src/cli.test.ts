@@ -1,4 +1,3 @@
-
 import { describe, it, expect } from 'vitest';
 import { loadConfig } from './config/loader';
 import { startServer } from './server';
@@ -20,8 +19,8 @@ describe('chaos-proxy CLI logic', () => {
     // Mock app.listen to avoid actually starting a server
     const originalListen = express.application.listen;
     let called = false;
-  // @ts-expect-error: mocking express.application.listen for test
-  express.application.listen = function(port: number, cb: () => void) {
+    // @ts-expect-error: mocking express.application.listen for test
+    express.application.listen = function (port: number, cb: () => void) {
       called = true;
       cb();
       return { close: () => {} };

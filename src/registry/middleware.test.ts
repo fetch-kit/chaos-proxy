@@ -4,7 +4,7 @@ import type { RequestHandler } from 'express';
 
 describe('middleware registry', () => {
   it('registers and resolves a middleware', () => {
-  const mockFactory = () => {
+    const mockFactory = () => {
       return ((req, res, next) => next()) as RequestHandler;
     };
     registerMiddleware('mock', mockFactory);

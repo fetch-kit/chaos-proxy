@@ -22,7 +22,7 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     if (methodPathMatch && methodPathMatch[1] && methodPathMatch[2]) {
       const method = methodPathMatch[1].toLowerCase();
       const path = methodPathMatch[2];
-  const expressApp = app as unknown as Record<string, (...args: unknown[]) => void>;
+      const expressApp = app as unknown as Record<string, (...args: unknown[]) => void>;
       if (typeof expressApp[method] === 'function') {
         expressApp[method](path, ...middlewares);
       } else {
