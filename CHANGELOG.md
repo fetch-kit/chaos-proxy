@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.2.3
+
+### Patch Changes
+
+- e33f185: Fixed
+  - Documented programmatic API exported
+
 ## 0.2.2
 
 ### Patch Changes
