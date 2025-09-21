@@ -1,6 +1,6 @@
 {
   "name": "chaos-proxy",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Express-based proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.3.0
+
+### Minor Changes
+
+- fc49ba3: Changed
+  - CLI/module load
+
 ## 0.2.3
 
 ### Patch Changes
