@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.4.0
+
+### Minor Changes
+
+- a322b27: Fixed
+  - Proxy made fully transparent for request/response streaming and headers
+
 ## 0.3.1
 
 ### Patch Changes
