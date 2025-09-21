@@ -1,14 +1,15 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Middleware } from 'koa';
 
-export function failNth(opts: { n: number; status?: number; body?: string }) {
+export function failNth(opts: { n: number; status?: number; body?: string }): Middleware {
   let count = 0;
-  return function (req: Request, res: Response, next: NextFunction) {
+  return async (ctx: Context, next: () => Promise<void>) => {
     count++;
     if (count === opts.n) {
-      res.status(opts.status ?? 500).send(opts.body ?? `Failed on request #${opts.n}`);
+      ctx.status = opts.status ?? 500;
+      ctx.body = opts.body ?? `Failed on request #${opts.n}`;
       count = 0;
     } else {
-      next();
+      await next();
     }
   };
 }

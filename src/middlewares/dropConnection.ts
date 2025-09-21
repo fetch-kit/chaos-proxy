@@ -1,16 +1,15 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Middleware } from 'koa';
 
-export function dropConnection(opts: { prob?: number }) {
-  return function (req: Request, res: Response, next: NextFunction) {
+export function dropConnection(opts: { prob?: number }): Middleware {
+  return async (ctx: Context, next: () => Promise<void>) => {
     if (Math.random() < (opts.prob ?? 1)) {
-      // Destroy the socket to simulate a dropped connection
-      if (res.socket) {
-        res.socket.destroy();
+      if (ctx.res.socket) {
+        ctx.res.socket.destroy();
       } else {
-        res.end();
+        ctx.res.end();
       }
     } else {
-      next();
+      await next();
     }
   };
 }

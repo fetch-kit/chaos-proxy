@@ -6,7 +6,7 @@
 
 # Chaos Proxy
 
-Chaos Proxy is an Express-based proxy and CLI tool for injecting configurable network chaos (latency, failures, connection drops, rate-limiting, etc.) into API requests. It applies ordered middleware (global and per-route) and forwards to your target API, preserving method, path, headers, query, and body.
+Chaos Proxy is a proxy server for injecting configurable network chaos (latency, failures, connection drops, rate-limiting, etc.) into any HTTP or HTTPS traffic. Use it via CLI or programmatically to apply ordered middleware (global and per-route) and forward requests to your target server, preserving method, path, headers, query, and body.
 
 ---
 
@@ -16,6 +16,7 @@ Chaos Proxy is an Express-based proxy and CLI tool for injecting configurable ne
 - Programmatic API and CLI usage
 - Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors
 - Extensible registry for custom middleware
+- Built on Koa, it supports both request and response interception/modification
 - Method+path route support (e.g., `GET /api/cc`)
 - Robust short-circuiting: middlewares halt further processing when sending a response or dropping a connection
 
@@ -103,7 +104,7 @@ routes:
 
 ### Rate Limiting
 
-The `rateLimit` middleware restricts how many requests a client can make in a given time window. It uses `express-rate-limit` under the hood.
+The `rateLimit` middleware restricts how many requests a client can make in a given time window. It uses `koa-ratelimit` under the hood.
 
 - `limit`: Maximum number of requests allowed per window (e.g., 100)
 - `windowMs`: Time window in milliseconds (e.g., 60000 for 1 minute)

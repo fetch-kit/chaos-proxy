@@ -2,4 +2,4 @@
 port: 8080
 target: http://localhost:3000
 global:
-  - rateLimit: { windowMs: 60000, max: 10 }
+  - rateLimit: { windowMs: 60000, limit: 10 }

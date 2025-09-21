@@ -1,37 +1,39 @@
-import rateLimitLib, { ipKeyGenerator } from 'express-rate-limit';
-import type { Request, RequestHandler } from 'express';
+import ratelimit from 'koa-ratelimit';
+import type { Middleware, Context } from 'koa';
+import { LRUCache } from 'lru-cache';
 
-export function rateLimit(opts: {
+// Add this if you get type errors for koa-ratelimit
+// declare module 'koa-ratelimit';
+
+export interface RateLimitOptions {
   limit: number;
   windowMs: number;
-  key?: string | ((req: Request) => string);
-  skipIpKeyCheck?: boolean;
-}): RequestHandler {
-  let keyGen: (req: Request) => string;
+  key?: string | ((ctx: Context) => string);
+}
+
+export function rateLimit(opts: RateLimitOptions): Middleware {
+  const db = new LRUCache<string, object>({ max: 10000 });
+  let getKey: (ctx: Context) => string;
   if (typeof opts.key === 'function') {
-    keyGen = (req: Request) => {
-      const val = (opts.key as (req: Request) => string)(req);
-      return typeof val === 'string' && val ? val : 'unknown';
-    };
+    getKey = opts.key;
   } else if (typeof opts.key === 'string') {
-    keyGen = (req: Request) => {
-      const headerVal = req.headers[opts.key as string];
-      if (typeof headerVal === 'string' && headerVal) return headerVal;
-      if (Array.isArray(headerVal) && headerVal.length) return headerVal.join(',');
-      return 'unknown';
+    getKey = (ctx: Context) => {
+      return ctx.get(opts.key as string) || ctx.ip || 'unknown';
     };
   } else {
-    keyGen = (req: Request) => ipKeyGenerator(req.ip ?? 'unknown');
+    getKey = (ctx: Context) => ctx.ip || 'unknown';
   }
-  return rateLimitLib({
-    windowMs: opts.windowMs,
+  return ratelimit({
+    driver: 'memory',
+    db,
+    duration: opts.windowMs,
+    errorMessage: 'Rate limit exceeded',
+    id: getKey,
     max: opts.limit,
-    keyGenerator: keyGen,
-    handler: (req, res) => {
-      res.status(429).send('Rate limit exceeded');
+    headers: {
+      remaining: 'X-RateLimit-Remaining',
+      reset: 'X-RateLimit-Reset',
+      total: 'X-RateLimit-Limit',
     },
-    standardHeaders: true,
-    legacyHeaders: false,
-    ...(opts.skipIpKeyCheck ? { skipIpKeyCheck: true } : {}),
   });
 }

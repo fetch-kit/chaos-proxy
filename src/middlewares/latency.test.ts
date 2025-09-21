@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { latency } from './latency';
-import type { Request, Response } from 'express';
+import type { Context } from 'koa';
 
 describe('latency middleware', () => {
   beforeEach(() => {
@@ -9,19 +9,21 @@ describe('latency middleware', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
-  it('delays by the specified ms (using fake timers)', () => {
+  function createMockCtx(): Context {
+    return {
+      status: undefined,
+      body: undefined,
+      set: vi.fn(),
+      method: 'GET',
+    } as unknown as Context;
+  }
+  it('delays by the specified ms (using fake timers)', async () => {
     const next = vi.fn();
     const mw = latency(50);
-    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
-    const res = {
-      status: () => res,
-      send: () => res,
-      end: () => res,
-      setHeader: () => res,
-      json: () => res,
-    } as unknown as Response;
-    mw(req, res, next);
+    const ctx = createMockCtx();
+    const promise = mw(ctx, next);
     vi.advanceTimersByTime(50);
+    await promise;
     expect(next).toHaveBeenCalled();
   });
 });

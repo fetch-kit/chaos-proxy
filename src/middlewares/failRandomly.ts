@@ -1,11 +1,12 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Middleware } from 'koa';
 
-export function failRandomly(opts: { rate: number; status?: number; body?: string }) {
-  return function (req: Request, res: Response, next: NextFunction) {
+export function failRandomly(opts: { rate: number; status?: number; body?: string }): Middleware {
+  return async (ctx: Context, next: () => Promise<void>) => {
     if (Math.random() < opts.rate) {
-      res.status(opts.status ?? 503).send(opts.body ?? 'Random failure');
+      ctx.status = opts.status ?? 503;
+      ctx.body = opts.body ?? 'Random failure';
     } else {
-      next();
+      await next();
     }
   };
 }

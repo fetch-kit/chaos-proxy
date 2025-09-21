@@ -1,58 +1,44 @@
 import { describe, it, expect, vi } from 'vitest';
 import { dropConnection } from './dropConnection';
-import type { Request, Response } from 'express';
+import type { Context } from 'koa';
 
 describe('dropConnection middleware', () => {
-  it('destroys socket with given probability', () => {
+  function createMockCtx(socketDestroy: () => void): Context {
+    return {
+      res: { socket: { destroy: socketDestroy }, end: vi.fn() },
+      method: 'GET',
+      set: vi.fn(),
+    } as unknown as Context;
+  }
+  it('destroys socket with given probability', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const destroy = vi.fn();
-    const res = {
-      socket: { destroy },
-      status: () => res,
-      send: () => res,
-      end: vi.fn(),
-      setHeader: vi.fn(),
-      json: vi.fn(),
-    } as unknown as Response;
-    const next = vi.fn();
+    const ctx = createMockCtx(destroy);
     const mw = dropConnection({ prob: 0.2 });
-    const req = { get: () => undefined, header: () => undefined } as unknown as Request;
-    mw(req, res, next);
+    await mw(ctx, async () => {});
     expect(destroy).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
-  it('calls next if not dropping', () => {
+  it('calls next if not dropping', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.9);
     const destroy2 = vi.fn();
-    const res2 = {
-      socket: { destroy: destroy2 },
-      status: () => res2,
-      send: () => res2,
-      end: vi.fn(),
-      setHeader: vi.fn(),
-      json: vi.fn(),
-    } as unknown as Response;
+    const ctx = createMockCtx(destroy2);
     const next2 = vi.fn();
     const mw = dropConnection({ prob: 0.2 });
-    const req2 = { get: () => undefined, header: () => undefined } as unknown as Request;
-    mw(req2, res2, next2);
+    await mw(ctx, next2);
     expect(next2).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
-  it('ends response if no socket', () => {
+  it('ends response if no socket', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const end = vi.fn();
-    const res3 = {
-      end,
-      status: () => res3,
-      send: () => res3,
-      setHeader: vi.fn(),
-      json: vi.fn(),
-    } as unknown as Response;
-    const next3 = vi.fn();
+    const ctx = {
+      res: { end },
+      method: 'GET',
+      set: vi.fn(),
+    } as unknown as Context;
     const mw = dropConnection({ prob: 1 });
-    const req3 = { get: () => undefined, header: () => undefined } as unknown as Request;
-    mw(req3, res3, next3);
+    await mw(ctx, async () => {});
     expect(end).toHaveBeenCalled();
     vi.restoreAllMocks();
   });

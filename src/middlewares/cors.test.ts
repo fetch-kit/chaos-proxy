@@ -1,64 +1,48 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { cors } from './cors';
-import type { Request } from 'express';
+import type { Context } from 'koa';
 
 describe('cors middleware', () => {
-  function mockRes() {
+  function createMockCtx(method: string = 'GET'): Context {
     const headers: Record<string, string> = {};
     return {
-      setHeader: (key: string, value: string) => {
+      set: (key: string, value: string) => {
         headers[key] = value;
       },
-      status: function (code: number) {
-        this.statusCode = code;
-        return this;
-      },
-      end: function () {
-        this.ended = true;
-      },
-      statusCode: undefined as number | undefined,
-      ended: false,
+      method,
+      status: undefined,
+      body: undefined,
       headers,
-    };
+    } as unknown as Context;
   }
 
-  it('sets default CORS headers', () => {
+  it('sets default CORS headers', async () => {
     const mw = cors();
-    const req = { method: 'GET' } as Request;
-    const res = mockRes();
-    let nextCalled = false;
-    // @ts-expect-error: mock response does not fully implement Express.Response
-    mw(req, res, () => {
-      nextCalled = true;
-    });
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
-    expect(res.headers['Access-Control-Allow-Methods']).toBe('GET,POST,PUT,DELETE,OPTIONS');
-    expect(res.headers['Access-Control-Allow-Headers']).toBe('Content-Type,Authorization');
-    expect(nextCalled).toBe(true);
+    const ctx = createMockCtx('GET');
+    const next = vi.fn();
+    await mw(ctx, next);
+    expect(ctx.headers['Access-Control-Allow-Origin']).toBe('*');
+    expect(ctx.headers['Access-Control-Allow-Methods']).toBe('GET,POST,PUT,DELETE,OPTIONS');
+    expect(ctx.headers['Access-Control-Allow-Headers']).toBe('Content-Type,Authorization');
+    expect(next).toHaveBeenCalled();
   });
 
-  it('sets custom CORS headers', () => {
+  it('sets custom CORS headers', async () => {
     const mw = cors({ origin: 'http://example.com', methods: 'GET', headers: 'X-Test' });
-    const req = { method: 'GET' } as Request;
-    const res = mockRes();
-    let nextCalled = false;
-    // @ts-expect-error: mock response does not fully implement Express.Response
-    mw(req, res, () => {
-      nextCalled = true;
-    });
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('http://example.com');
-    expect(res.headers['Access-Control-Allow-Methods']).toBe('GET');
-    expect(res.headers['Access-Control-Allow-Headers']).toBe('X-Test');
-    expect(nextCalled).toBe(true);
+    const ctx = createMockCtx('GET');
+    const next = vi.fn();
+    await mw(ctx, next);
+    expect(ctx.headers['Access-Control-Allow-Origin']).toBe('http://example.com');
+    expect(ctx.headers['Access-Control-Allow-Methods']).toBe('GET');
+    expect(ctx.headers['Access-Control-Allow-Headers']).toBe('X-Test');
+    expect(next).toHaveBeenCalled();
   });
 
-  it('handles OPTIONS preflight requests', () => {
+  it('handles OPTIONS preflight requests', async () => {
     const mw = cors();
-    const req = { method: 'OPTIONS' } as Request;
-    const res = mockRes();
-    // @ts-expect-error: mock response does not fully implement Express.Response
-    mw(req, res, () => {});
-    expect(res.statusCode).toBe(204);
-    expect(res.ended).toBe(true);
+    const ctx = createMockCtx('OPTIONS');
+    await mw(ctx, async () => {});
+    expect(ctx.status).toBe(204);
+    expect(ctx.body).toBeUndefined();
   });
 });

@@ -1,8 +1,9 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Middleware } from 'koa';
 
-export function latencyRange(minMs: number, maxMs: number) {
-  return function (req: Request, res: Response, next: NextFunction) {
+export function latencyRange(minMs: number, maxMs: number): Middleware {
+  return async (ctx: Context, next: () => Promise<void>) => {
     const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-    setTimeout(next, delay);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    await next();
   };
 }

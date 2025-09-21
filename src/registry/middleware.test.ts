@@ -1,16 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { registerMiddleware, resolveMiddleware } from './middleware';
-import type { RequestHandler } from 'express';
+import type { Context } from 'koa';
 
 describe('middleware registry', () => {
-  it('registers and resolves a middleware', () => {
+  it('registers and resolves a middleware', async () => {
     const mockFactory = () => {
-      return ((req, res, next) => next()) as RequestHandler;
+      return async (ctx: Context, next: () => Promise<void>) => { await next(); };
     };
     registerMiddleware('mock', mockFactory);
     const node: Record<string, unknown> = { mock: { foo: 'bar' } };
     const mw = resolveMiddleware(node);
     expect(typeof mw).toBe('function');
+    // Test invocation
+    const ctx = {} as Context;
+    let called = false;
+    await mw(ctx, async () => { called = true; });
+    expect(called).toBe(true);
   });
 
   it('throws for unknown middleware', () => {
@@ -32,7 +37,7 @@ describe('middleware registry', () => {
     let receivedOpts: Record<string, unknown> | null = null;
     registerMiddleware('optsTest', (_opts: Record<string, unknown>) => {
       receivedOpts = _opts;
-      return ((req, res, next) => next()) as RequestHandler;
+      return async (ctx: Context, next: () => Promise<void>) => { await next(); };
     });
     const node: Record<string, unknown> = { optsTest: { test: 123 } };
     resolveMiddleware(node);

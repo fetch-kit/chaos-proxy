@@ -5,6 +5,6 @@ global:
   - latency: { ms: 200 }
 routes:
   /api:
-    - rateLimit: { windowMs: 60000, max: 5 }
+  - rateLimit: { windowMs: 60000, limit: 5 }
   /admin:
     - latency: { ms: 1000 }

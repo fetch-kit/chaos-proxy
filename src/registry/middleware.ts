@@ -1,15 +1,15 @@
-import type { RequestHandler } from 'express';
+import type { Middleware } from 'koa';
 
-const middlewareRegistry: Record<string, (opts: Record<string, unknown>) => RequestHandler> = {};
+const middlewareRegistry: Record<string, (opts: Record<string, unknown>) => Middleware> = {};
 
 export function registerMiddleware(
   name: string,
-  factory: (opts: Record<string, unknown>) => RequestHandler
+  factory: (opts: Record<string, unknown>) => Middleware
 ) {
   middlewareRegistry[name] = factory;
 }
 
-export function resolveMiddleware(node: Record<string, unknown>): RequestHandler {
+export function resolveMiddleware(node: Record<string, unknown>): Middleware {
   if (typeof node === 'object' && node !== null) {
     const keys = Object.keys(node);
     if (keys.length !== 1) throw new Error('Middleware node must have exactly one key');

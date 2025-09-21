@@ -2,7 +2,7 @@ import yaml from 'yaml';
 import { resolveMiddleware } from '../registry/middleware';
 // ...existing code...
 import type { ChaosConfig } from './loader';
-import type { RequestHandler } from 'express';
+import type { Middleware } from 'koa';
 
 export function parseConfig(yamlString: string): ChaosConfig {
   let parsed: unknown;
@@ -38,11 +38,11 @@ export function parseConfig(yamlString: string): ChaosConfig {
 }
 
 export function resolveConfigMiddlewares(config: ChaosConfig): {
-  global: RequestHandler[];
-  routes: Record<string, RequestHandler[]>;
+  global: Middleware[];
+  routes: Record<string, Middleware[]>;
 } {
-  const global: RequestHandler[] = [];
-  const routes: Record<string, RequestHandler[]> = {};
+  const global: Middleware[] = [];
+  const routes: Record<string, Middleware[]> = {};
 
   // Resolve global middlewares
   if (Array.isArray(config.global)) {
@@ -54,7 +54,7 @@ export function resolveConfigMiddlewares(config: ChaosConfig): {
   // Resolve route middlewares
   if (config.routes && typeof config.routes === 'object') {
     for (const [route, nodes] of Object.entries(config.routes)) {
-      const chain: RequestHandler[] = [];
+      const chain: Middleware[] = [];
       for (const node of nodes) {
         chain.push(resolveMiddleware(node as Record<string, unknown>));
       }

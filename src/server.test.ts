@@ -1,6 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect, vi } from 'vitest';
-import express from 'express';
-import type { Request, Response as ExpressResponse, NextFunction } from 'express';
+import Koa from 'koa';
+import bodyParser from 'koa-bodyparser';
+import type { Middleware } from 'koa';
 import type { Server } from 'http';
 import { startServer } from './server';
 
@@ -10,30 +11,34 @@ const TEST_PORT = 8001;
 const PROXY_PORT = 8002;
 const TARGET = `http://localhost:${TEST_PORT}`;
 
+interface BodyParsedRequest extends Koa.Request {
+  body?: unknown;
+}
+
 function startTestServer() {
-  const app = express();
-  app.use(express.json());
-
-  app.get('/api/cc', (req, res) => {
-    res.status(200).json({ message: 'GET success', query: req.query });
+  const app = new Koa();
+  app.use(bodyParser());
+  app.use(async (ctx, next) => {
+    const req = ctx.request as BodyParsedRequest;
+    if (ctx.method === 'GET' && ctx.path === '/api/cc') {
+      ctx.status = 200;
+      ctx.body = { message: 'GET success', query: ctx.query };
+    } else if (ctx.method === 'POST' && ctx.path === '/api/cc') {
+      ctx.status = 201;
+      ctx.body = { message: 'POST success', body: req.body };
+    } else if (ctx.method === 'GET' && ctx.path === '/api/error') {
+      ctx.status = 500;
+      ctx.body = { error: 'Internal error' };
+    } else if (ctx.method === 'GET' && ctx.path === '/api/headers') {
+      ctx.status = 200;
+      ctx.body = { headers: ctx.headers };
+    } else if (ctx.method === 'POST' && ctx.path === '/api/echo') {
+      ctx.status = 200;
+      ctx.body = { headers: ctx.headers, body: req.body };
+    } else {
+      await next();
+    }
   });
-
-  app.post('/api/cc', (req, res) => {
-    res.status(201).json({ message: 'POST success', body: req.body });
-  });
-
-  app.get('/api/error', (req, res) => {
-    res.status(500).json({ error: 'Internal error' });
-  });
-
-  app.get('/api/headers', (req, res) => {
-    res.status(200).json({ headers: req.headers });
-  });
-
-  app.post('/api/echo', (req, res) => {
-    res.status(200).json({ headers: req.headers, body: req.body });
-  });
-
   return app.listen(TEST_PORT);
 }
 
@@ -128,14 +133,13 @@ describe('Proxy server', () => {
 
 describe('startServer edge cases', () => {
   it('mounts global middlewares', async () => {
-    const globalMiddleware = (req: Request, res: ExpressResponse, next: NextFunction) => {
-      res.set('X-Global', 'yes');
-      next();
+    const globalMiddleware: Middleware = async (ctx, next) => {
+      ctx.set('X-Global', 'yes');
+      await next();
     };
     const config = {
       target: TARGET,
       port: PROXY_PORT + 1,
-      // Simulate config.parser output
       global: [globalMiddleware],
       routes: {},
     };
@@ -149,9 +153,9 @@ describe('startServer edge cases', () => {
   });
 
   it('mounts route middlewares with method support', async () => {
-    const mw = (req: Request, res: ExpressResponse, next: NextFunction) => {
-      res.set('X-Route', 'yes');
-      next();
+    const mw: Middleware = async (ctx, next) => {
+      ctx.set('X-Route', 'yes');
+      await next();
     };
     const config = {
       target: TARGET,
