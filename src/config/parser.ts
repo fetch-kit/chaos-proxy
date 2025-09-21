@@ -1,7 +1,7 @@
 import yaml from 'yaml';
-import { resolveMiddleware } from '../registry/middleware.ts';
-import { resolvePreset } from '../registry/preset.ts';
-import type { ChaosConfig } from './loader.ts';
+import { resolveMiddleware } from '../registry/middleware';
+import { resolvePreset } from '../registry/preset';
+import type { ChaosConfig } from './loader';
 import type { RequestHandler } from 'express';
 
 export function parseConfig(yamlString: string): ChaosConfig {

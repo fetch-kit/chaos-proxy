@@ -1,8 +1,7 @@
 
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+  "noEmit": false,
     "outDir": "./dist",
     "target": "esnext",
     "types": ["node"],
@@ -21,7 +20,8 @@
   "allowSyntheticDefaultImports": true,
   "esModuleInterop": true,
   "module": "ESNext",
-  "moduleResolution": "node"
+  "moduleResolution": "node",
+  "resolveJsonModule": true
   },
   "include": ["src", "vitest.config.ts"]
 }

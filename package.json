@@ -9,7 +9,7 @@
     "bin"
   ],
   "bin": {
-    "chaos-proxy": "bin/chaos-proxy.js"
+    "chaos-proxy": "dist/src/cli.js"
   },
   "directories": {
     "example": "examples"
@@ -18,7 +18,8 @@
     "build": "tsup",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-    "test": "vitest",
+  "test": "vitest",
+  "test:cli": "ts-node --prefer-ts-exts src/cli.ts",
     "dev": "ts-node --esm src/index.ts",
     "prepare": "husky install",
     "prepublishOnly": "npm run build && npm run test"
@@ -59,6 +60,7 @@
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "execa": "^9.6.0",
     "globals": "^16.4.0",
     "husky": "^8.0.0",
     "jiti": "^2.5.1",

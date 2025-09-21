@@ -2,7 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 
 import type { ChaosConfig } from './config/loader';
-import { resolveConfigMiddlewares } from './config/parser.ts';
+import { resolveConfigMiddlewares } from './config/parser';
 
 export function startServer(config: ChaosConfig, options?: { verbose?: boolean }) {
   const app = express();

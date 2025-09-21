@@ -1,7 +1,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { parseConfig } from './parser.ts';
+import { parseConfig } from './parser';
 
 export type ChaosConfig = {
   target: string;

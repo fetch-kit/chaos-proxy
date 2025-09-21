@@ -1,11 +1,11 @@
-import { cors } from '../middlewares/cors.ts';
-import { registerMiddleware } from './middleware.ts';
-import { registerPreset } from './preset.ts';
-import { latency } from '../middlewares/latency.ts';
-import { latencyRange } from '../middlewares/latencyRange.ts';
-import { failRandomly } from '../middlewares/failRandomly.ts';
-import { dropConnection } from '../middlewares/dropConnection.ts';
-import { fail } from '../middlewares/fail.ts';
+import { cors } from '../middlewares/cors';
+import { registerMiddleware } from './middleware';
+import { registerPreset } from './preset';
+import { latency } from '../middlewares/latency';
+import { latencyRange } from '../middlewares/latencyRange';
+import { failRandomly } from '../middlewares/failRandomly';
+import { dropConnection } from '../middlewares/dropConnection';
+import { fail } from '../middlewares/fail';
 
 export function registerBuiltins() {
   // Register built-in middleware primitives

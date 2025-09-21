@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loadConfig } from './loader.ts';
+import { loadConfig } from './loader';
 
 describe('loadConfig', () => {
   it('throws if config file is missing', () => {

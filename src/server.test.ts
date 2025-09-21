@@ -141,7 +141,7 @@ describe('startServer edge cases', () => {
     };
     // Patch resolveConfigMiddlewares to return our config
     const serverModule = await import('./server');
-    vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
+  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
   const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 1}/api/cc`);
     expect(res.headers.get('x-global')).toBe('yes');
@@ -159,7 +159,7 @@ describe('startServer edge cases', () => {
       global: [],
       routes: { 'GET /api/cc': [mw] },
     };
-    vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
+  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
   const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 2}/api/cc`);
@@ -174,7 +174,7 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-    vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
+  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 4 }, { verbose: true }) as Server;
@@ -191,7 +191,7 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-    vi.spyOn(await import('./config/parser.ts'), 'resolveConfigMiddlewares').mockReturnValue(config);
+  vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const serverModule = await import('./server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   let app: Server | undefined = undefined;
