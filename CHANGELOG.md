@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 0.2.2
+
+### Patch Changes
+
+- 4ea5aa8: Fixed
+  - npm script fixed
+
 ## 0.2.1
 
 ### Patch Changes
