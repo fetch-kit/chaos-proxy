@@ -9,7 +9,7 @@
     "bin"
   ],
   "bin": {
-    "chaos-proxy": "dist/src/cli.js"
+    "chaos-proxy": "dist/cli.js"
   },
   "directories": {
     "example": "examples"
