@@ -1,3 +1,7 @@
+export { loadConfig } from './config/loader';
+export { startServer } from './server';
+export { registerMiddleware } from './registry/middleware';
+export { registerPreset } from './registry/preset';
 
 import { loadConfig } from './config/loader.ts';
 import { startServer } from './server.ts';
