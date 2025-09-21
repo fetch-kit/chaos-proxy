@@ -1,5 +1,2 @@
 #!/bin/sh
-
-npm run lint && npm test#!/bin/sh
-
 npm run lint && npm test

@@ -47,17 +47,14 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     // Remove host header to avoid conflicts
     delete headers.host;
 
-    let body: unknown = undefined;
     const fetchOptions: Record<string, unknown> = {
       method,
       headers,
       redirect: 'manual',
+      // Use duplex for streaming body
+      duplex: 'half',
+      body: (method !== 'GET' && method !== 'HEAD') ? req : undefined,
     };
-    if (method !== 'GET' && method !== 'HEAD') {
-      body = req;
-      fetchOptions.body = body;
-      fetchOptions.duplex = 'half';
-    }
 
     if (options?.verbose) {
       console.log(`[VERBOSE] ${method} ${req.originalUrl}`);
@@ -69,8 +66,18 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
       proxyRes.headers.forEach((value, key) => {
         res.setHeader(key, value);
       });
-      const data = await proxyRes.arrayBuffer();
-      res.send(Buffer.from(data));
+      // Stream response body directly
+      if (proxyRes.body) {
+        const reader = (proxyRes.body as ReadableStream<Uint8Array>).getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(value);
+        }
+        res.end();
+      } else {
+        res.end();
+      }
     } catch (err) {
       res.status(502).send((err as Error).message);
     }
