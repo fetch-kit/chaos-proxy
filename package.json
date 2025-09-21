@@ -21,7 +21,7 @@
     "test": "vitest",
     "dev": "ts-node --esm src/index.ts",
     "prepare": "husky install",
-    "prepublishOnly": "npm run build && npm run test:ci"
+    "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [
     "proxy",
