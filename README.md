@@ -138,7 +138,9 @@ global:
 
 ## Extensibility
 
-- Register custom middleware: `registerMiddleware(name, factory)`
+Register custom middleware: `registerMiddleware(name, factory)`
+
+Under the hood, `chaos-proxy` uses [Koa](https://koajs.com/), so your custom middleware can leverage the full Koa context and ecosystem. Note that Koa middleware functions are async and take `(ctx, next)` parameters. Read more in the [Koa docs](https://koajs.com/#middleware). The reason for switching from Express to Koa is to enable async/await support which helps intercept both requests and responses more easily. In the /examples/middlewares folder, you can find a custom middleware implementation.
 
 ---
 
