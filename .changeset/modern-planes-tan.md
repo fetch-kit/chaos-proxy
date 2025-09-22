@@ -8,3 +8,4 @@ Breaking Changes
 - Refactored middleware API: all built-in and custom middlewares must be Koa async functions.
 - Updated configuration format and options for Koa compatibility.
 - Changed rateLimit middleware options (max → limit).
+- Presets removed.
