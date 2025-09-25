@@ -14,7 +14,7 @@ Chaos Proxy is a proxy server for injecting configurable network chaos (latency,
 
 - Simple configuration via a single `chaos.yaml` file
 - Programmatic API and CLI usage
-- Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors
+- Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors, throttle
 - Extensible registry for custom middleware
 - Built on Koa, it supports both request and response interception/modification
 - Method+path route support (e.g., `GET /api/users`)
@@ -119,6 +119,7 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 - `rateLimit({ limit, windowMs, key })` — rate limiting (by IP, header, or custom)
 - `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
 `throttle({ rate, chunkSize, burst, key })` — throttles bandwidth per request to a specified rate (bytes per second), with optional burst capacity and chunk size. The key option allows per-client throttling. (Implemented natively, not using koa-throttle.)
+- `bodyTransform({ transform })` — parse and mutate request body with a custom function.
 
 ### Rate Limiting
 
@@ -186,6 +187,28 @@ global:
 ```
 
 This configuration throttles responses to an average of 1 KB/s, sending data in 512-byte chunks, with bursts up to 2 KB, identified by the `Authorization` header.
+
+### Body Transform
+
+The `bodyTransform` middleware parses the incoming request body (JSON, form, or text), then replaces it with the result of your custom `transform` function. This lets you inspect, modify, or completely replace the body before it is proxied or processed by other middlewares. It uses `koa-bodyparser` under the hood.
+
+How it works:
+- Parses the request body and makes it available as `ctx.request.body`.
+- Calls your `transform` function with the parsed body and Koa context.
+- Sets the return value as the new `ctx.request.body`.
+- Subsequent middlewares and proxy logic use the mutated body.
+
+**Example:**
+```yaml
+global:
+  - bodyTransform:
+      transform: "(body, ctx) => { body.foo = 'bar'; return body; }"
+```
+
+This configuration adds a `foo: 'bar'` property to every JSON request body before it is proxied to the target server.
+
+**Note:**
+For maximum flexibility, the `transform` option in `bodyTransform` can be specified as a JavaScript function string in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
 
 ---
 

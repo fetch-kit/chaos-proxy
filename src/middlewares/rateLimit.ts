@@ -2,9 +2,6 @@ import ratelimit from 'koa-ratelimit';
 import type { Middleware, Context } from 'koa';
 import { LRUCache } from 'lru-cache';
 
-// Add this if you get type errors for koa-ratelimit
-// declare module 'koa-ratelimit';
-
 export interface RateLimitOptions {
   limit: number;
   windowMs: number;
