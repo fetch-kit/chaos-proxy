@@ -118,6 +118,7 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 - `dropConnection({ prob })` — randomly drop connection
 - `rateLimit({ limit, windowMs, key })` — rate limiting (by IP, header, or custom)
 - `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
+`throttle({ rate, chunkSize, burst, key })` — throttles bandwidth per request to a specified rate (bytes per second), with optional burst capacity and chunk size. The key option allows per-client throttling. (Implemented natively, not using koa-throttle.)
 
 ### Rate Limiting
 
@@ -163,6 +164,28 @@ global:
 ```
 
 This configuration restricts CORS to requests from `https://example.com` using only `GET` and `POST` methods, and allows the `Authorization` and `Content-Type` headers.
+
+
+### Throttling
+
+The `throttle` middleware limits the bandwidth of responses to simulate slow network conditions.
+
+- `rate`: The average rate (in bytes per second) to allow (e.g., 1024 for 1 KB/s).
+- `chunkSize`: The size of each chunk to send (in bytes). Smaller chunks can simulate more granular throttling (default 16384).
+- `burst`: The maximum burst size (in bytes) that can be sent at once (default 0, meaning no burst).
+- `key`: How to identify clients for per-client throttling (default is IP, but can be a header name or a custom function).
+
+**Example:**
+```yaml
+global:
+  - throttle:
+      rate: 1024        # 1 KB/s
+      chunkSize: 512    # 512 bytes per chunk
+      burst: 2048       # allow bursts up to 2 KB
+      key: "Authorization"
+```
+
+This configuration throttles responses to an average of 1 KB/s, sending data in 512-byte chunks, with bursts up to 2 KB, identified by the `Authorization` header.
 
 ---
 
