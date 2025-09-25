@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 1.0.2
+
+### Patch Changes
+
+- 184f5be: Changed
+  - changeset config
+
 ## 1.0.1
 
 ### Patch Changes
