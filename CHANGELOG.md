@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 1.0.3
+
+### Patch Changes
+
+- a6d2bda: Changed
+  - package.json updated
+
 ## 1.0.2
 
 ### Patch Changes
