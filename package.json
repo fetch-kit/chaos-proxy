@@ -1,7 +1,7 @@
 {
   "name": "@fetchkit/chaos-proxy",
   "version": "1.0.2",
-  "description": "Express-based proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
+  "description": "Proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -36,7 +36,7 @@
   "author": "Gabor Koos <gkoos@users.noreply.github.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gkoos/chaos-proxy.git"
+    "url": "https://github.com/fetch-kit/chaos-proxy.git"
   },
   "publishConfig": {
     "access": "public"
