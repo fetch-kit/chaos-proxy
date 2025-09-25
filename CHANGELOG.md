@@ -1,5 +1,17 @@
 # chaos-proxy
 
+## 1.0.0
+
+### Major Changes
+
+- 4a11b38: Added
+  - throttle middleware
+  - bodyTransform middleware
+
+  Changed
+  - tests moved to /test
+  - routing logic improved
+
 ## 0.6.0
 
 ### Minor Changes
