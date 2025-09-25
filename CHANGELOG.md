@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 1.0.1
+
+### Patch Changes
+
+- 39501a2: Added
+  - package moved to @fetchkit/chaos-proxy
+
 ## 1.0.0
 
 ### Major Changes
