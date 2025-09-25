@@ -17,7 +17,7 @@ Chaos Proxy is a proxy server for injecting configurable network chaos (latency,
 - Built-in middleware primitives: latency, latencyRange, fail, failRandomly, failNth, dropConnection, rateLimit, cors
 - Extensible registry for custom middleware
 - Built on Koa, it supports both request and response interception/modification
-- Method+path route support (e.g., `GET /api/cc`)
+- Method+path route support (e.g., `GET /api/users`)
 - Robust short-circuiting: middlewares halt further processing when sending a response or dropping a connection
 
 ---
@@ -89,6 +89,23 @@ routes:
         status: 500
 ```
 
+### Routing
+
+Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g., `/users/:id`), wildcards (e.g., `*`), and regex routes.
+
+- Example: `"GET /api/*"` matches any GET request under `/api/`.
+- Example: `"GET /users/:id"` matches GET requests like `/users/123`.
+
+**Rule inheritance:**
+- There is no inheritance between global and route-specific middleware.
+- Global middlewares apply to every request.
+- Route middlewares only apply to requests matching that route.
+- If a request matches a route, only the middlewares for that route (plus global) are applied. Route rules do not inherit or merge from parent routes or wildcards.
+- If multiple routes match, the most specific one is chosen (e.g., `/users/:id` over `/users/*`).
+- If no route matches, only global middlewares are applied.
+- Order of middleware execution: global middlewares run first, followed by route-specific middlewares in the order they are defined. Example: If you have a global latency of 100ms and a route-specific failNth, a request to that route will first incur the 100ms latency, then be subject to the failNth logic.
+- Routes can be defined with or without HTTP methods. If a method is specified (e.g., `GET /path`), the rule only applies to that method. If no method is specified (e.g., `/path`), the rule applies to all methods for that path.
+
 ---
 
 ## Middleware Primitives
@@ -116,7 +133,18 @@ How it works:
 - If the number of requests exceeds `limit`, further requests from that key receive a `429 Too Many Requests` response until the window resets.
 - You can customize the keying strategy to rate-limit by IP, by a specific header (e.g., `Authorization`), or by any custom logic.
 
-This helps simulate API throttling, or test client retry logic under rate-limited conditions.
+**Example:**
+```yaml
+global:
+  - rateLimit:
+      limit: 100
+      windowMs: 60000
+      key: "Authorization"
+```
+
+This configuration limits clients to 100 requests per minute, identified by their `Authorization` header.
+
+This helps test client retry logic under rate-limited conditions.
 
 ### CORS
 
@@ -133,6 +161,8 @@ global:
       methods: "GET,POST"
       headers: "Authorization,Content-Type"
 ```
+
+This configuration restricts CORS to requests from `https://example.com` using only `GET` and `POST` methods, and allows the `Authorization` and `Content-Type` headers.
 
 ---
 
@@ -156,4 +186,3 @@ Under the hood, `chaos-proxy` uses [Koa](https://koajs.com/), so your custom mid
 ## License
 
 MIT
-

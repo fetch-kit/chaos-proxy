@@ -6,6 +6,8 @@ import { latencyRange } from '../middlewares/latencyRange';
 import { failRandomly } from '../middlewares/failRandomly';
 import { dropConnection } from '../middlewares/dropConnection';
 import { fail } from '../middlewares/fail';
+import { rateLimit } from '../middlewares/rateLimit';
+import type { RateLimitOptions } from '../middlewares/rateLimit';
 
 export function registerBuiltins() {
   // Register built-in middleware primitives
@@ -21,4 +23,5 @@ export function registerBuiltins() {
   registerMiddleware('cors', (opts) =>
     cors(opts as { origin?: string; methods?: string; headers?: string })
   );
+  registerMiddleware('rateLimit', (opts) => rateLimit(opts as unknown as RateLimitOptions));
 }
