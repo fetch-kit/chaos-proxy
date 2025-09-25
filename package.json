@@ -1,5 +1,5 @@
 {
-  "name": "chaos-proxy",
+  "name": "@fetchkit/chaos-proxy",
   "version": "1.0.0",
   "description": "Express-based proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
   "main": "dist/index.js",
