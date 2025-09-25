@@ -3,7 +3,7 @@ import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import type { Middleware } from 'koa';
 import type { Server } from 'http';
-import { startServer } from './server';
+import { startServer } from '../src/server';
 
 let testServer: Server;
 let proxyServer: Server;
@@ -144,8 +144,8 @@ describe('startServer edge cases', () => {
       routes: {},
     };
     // Patch resolveConfigMiddlewares to return our config
-    const serverModule = await import('./server');
-    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    const serverModule = await import('../src/server');
+    vi.spyOn(await import('../src/config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
     const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 1 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 1}/api/cc`);
     expect(res.headers.get('x-global')).toBe('yes');
@@ -163,8 +163,8 @@ describe('startServer edge cases', () => {
       global: [],
       routes: { 'GET /api/cc': [mw] },
     };
-    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
-    const serverModule = await import('./server');
+    vi.spyOn(await import('../src/config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    const serverModule = await import('../src/server');
     const app = serverModule.startServer({ target: TARGET, port: PROXY_PORT + 2 }, {}) as Server;
     const res = await fetch(`http://localhost:${PROXY_PORT + 2}/api/cc`);
     expect(res.headers.get('x-route')).toBe('yes');
@@ -178,8 +178,8 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
-    const serverModule = await import('./server');
+    vi.spyOn(await import('../src/config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    const serverModule = await import('../src/server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const app = serverModule.startServer(
       { target: TARGET, port: PROXY_PORT + 4 },
@@ -198,8 +198,8 @@ describe('startServer edge cases', () => {
       global: [],
       routes: {},
     };
-    vi.spyOn(await import('./config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
-    const serverModule = await import('./server');
+    vi.spyOn(await import('../src/config/parser'), 'resolveConfigMiddlewares').mockReturnValue(config);
+    const serverModule = await import('../src/server');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let app: Server | undefined = undefined;
     await new Promise((resolve) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { failNth } from './failNth';
+import { failNth } from '../../src/middlewares/failNth';
 import type { Context } from 'koa';
 
 describe('failNth middleware', () => {

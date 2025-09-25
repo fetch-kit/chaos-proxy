@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rateLimit } from './rateLimit';
+import { rateLimit } from '../../src/middlewares/rateLimit';
 
 import type { Context } from 'koa';
 

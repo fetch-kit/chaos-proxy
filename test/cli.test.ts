@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { loadConfig } from './config/loader';
-import { startServer } from './server';
-import { parseConfig } from './config/parser';
+import { loadConfig } from '../src/config/loader';
+import { startServer } from '../src/server';
+import { parseConfig } from '../src/config/parser';
 // No longer needed: import express from 'express';
 
 describe('chaos-proxy CLI logic', () => {

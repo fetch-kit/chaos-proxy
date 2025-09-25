@@ -8,6 +8,8 @@ import { dropConnection } from '../middlewares/dropConnection';
 import { fail } from '../middlewares/fail';
 import { rateLimit } from '../middlewares/rateLimit';
 import type { RateLimitOptions } from '../middlewares/rateLimit';
+import { throttle } from '../middlewares/throttle';
+import type { ThrottleOptions } from '../middlewares/throttle';
 
 export function registerBuiltins() {
   // Register built-in middleware primitives
@@ -24,4 +26,5 @@ export function registerBuiltins() {
     cors(opts as { origin?: string; methods?: string; headers?: string })
   );
   registerMiddleware('rateLimit', (opts) => rateLimit(opts as unknown as RateLimitOptions));
+  registerMiddleware('throttle', (opts) => throttle(opts as unknown as ThrottleOptions));
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { dropConnection } from './dropConnection';
+import { dropConnection } from '../../src/middlewares/dropConnection';
 import type { Context } from 'koa';
 
 describe('dropConnection middleware', () => {

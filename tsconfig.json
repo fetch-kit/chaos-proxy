@@ -23,5 +23,5 @@
   "moduleResolution": "node",
   "resolveJsonModule": true
   },
-  "include": ["src", "types", "vitest.config.ts"]
+  "include": ["src", "types", "vitest.config.ts", "test"]
 }

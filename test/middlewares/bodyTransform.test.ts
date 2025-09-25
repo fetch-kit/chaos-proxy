@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { bodyTransform } from './bodyTransform';
+import { bodyTransform } from '../../src/middlewares/bodyTransform';
 import type { Context } from 'koa';
 
 function createMockCtx(body: unknown, contentType = 'application/json'): Context {

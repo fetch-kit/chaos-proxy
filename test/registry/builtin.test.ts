@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { registerBuiltins } from './builtin';
-import { resolveMiddleware } from './middleware';
+import { registerBuiltins } from '../../src/registry/builtin';
+import { resolveMiddleware } from '../../src/registry/middleware';
 // ...existing code...
 
 describe('registerBuiltins', () => {

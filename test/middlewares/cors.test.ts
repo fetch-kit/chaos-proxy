@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { cors } from './cors';
+import { cors } from '../../src/middlewares/cors';
 import type { Context } from 'koa';
 
 describe('cors middleware', () => {

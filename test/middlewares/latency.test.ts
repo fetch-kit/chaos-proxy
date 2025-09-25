@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { latency } from './latency';
+import { latency } from '../../src/middlewares/latency';
 import type { Context } from 'koa';
 
 describe('latency middleware', () => {

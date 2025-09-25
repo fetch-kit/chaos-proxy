@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-import { loadConfig, startServer, registerBuiltins } from './index';
-
-registerBuiltins();
+import { loadConfig, startServer } from './index';
 
 const args = process.argv.slice(2);
 let configPath = 'chaos.yaml';

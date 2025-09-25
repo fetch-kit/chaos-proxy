@@ -42,7 +42,11 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
         throw new Error(`Unsupported HTTP method: ${method}`);
       }
     } else {
-      router.use(routeKey, ...middlewares);
+      // Mount for all HTTP methods if no method is specified
+      const methods = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'];
+      for (const method of methods) {
+        (router[method as keyof typeof router] as (path: string, ...middleware: Array<Koa.Middleware>) => Router)(routeKey, ...middlewares);
+      }
     }
   }
   app.use(router.routes());

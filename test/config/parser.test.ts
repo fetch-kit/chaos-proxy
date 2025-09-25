@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parseConfig, resolveConfigMiddlewares } from './parser';
+import { parseConfig, resolveConfigMiddlewares } from '../../src/config/parser';
 // ...existing code...
 // ...existing code...
 // ...existing code...
-import type { ChaosConfig } from './loader';
+import type { ChaosConfig } from '../../src/config/loader';
 
 describe('parseConfig', () => {
   it('parses a valid config with default port', () => {

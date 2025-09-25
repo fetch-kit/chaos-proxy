@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { registerMiddleware, resolveMiddleware } from './middleware';
+import { registerMiddleware, resolveMiddleware } from '../../src/registry/middleware';
 import type { Context } from 'koa';
 
 describe('middleware registry', () => {

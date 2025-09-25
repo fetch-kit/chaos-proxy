@@ -5,4 +5,4 @@ import { registerBuiltins } from './registry/builtin';
 
 registerBuiltins();
 
-export { loadConfig, startServer, registerMiddleware, registerBuiltins };
+export { loadConfig, startServer, registerMiddleware };

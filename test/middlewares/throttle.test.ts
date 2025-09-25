@@ -1,5 +1,5 @@
-import { throttle } from './throttle';
-import type { ThrottleOptions } from './throttle';
+import { throttle } from '../../src/middlewares/throttle';
+import type { ThrottleOptions } from '../../src/middlewares/throttle';
 import { Readable, Writable } from 'stream';
 import type { Context } from 'koa';
 import { describe, it, expect } from 'vitest';

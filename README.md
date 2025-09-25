@@ -100,6 +100,7 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 - There is no inheritance between global and route-specific middleware.
 - Global middlewares apply to every request.
 - Route middlewares only apply to requests matching that route.
+- Routes can be defined with or without HTTP methods. If a method is specified (e.g., `GET /path`), the rule only applies to that method. If no method is specified (e.g., `/path`), the rule applies to all methods for that path.
 - If a request matches a route, only the middlewares for that route (plus global) are applied. Route rules do not inherit or merge from parent routes or wildcards.
 - If multiple routes match, the most specific one is chosen (e.g., `/users/:id` over `/users/*`).
 - If no route matches, only global middlewares are applied.
@@ -209,6 +210,26 @@ This configuration adds a `foo: 'bar'` property to every JSON request body befor
 
 **Note:**
 For maximum flexibility, the `transform` option in `bodyTransform` can be specified as a JavaScript function string in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
+
+
+If you call `startServer` programmatically, you can also pass a real function instead of a string:
+
+```ts
+import { startServer, bodyTransform } from 'chaos-proxy';
+
+startServer({
+  target: 'http://localhost:4000',
+  port: 5000,
+  global: [
+    bodyTransform({
+      transform: (body, ctx) => {
+        body.foo = 'bar';
+        return body;
+      }
+    })
+  ]
+});
+```
 
 ---
 
