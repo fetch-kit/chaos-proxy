@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 1.0.4
+
+### Patch Changes
+
+- 5a84087: Added
+  - Discord release announcement
+
 ## 1.0.3
 
 ### Patch Changes
