@@ -250,6 +250,15 @@ Under the hood, `chaos-proxy` uses [Koa](https://koajs.com/), so your custom mid
 
 ---
 
+## Join the Community
+
+Have questions, want to discuss features, or share examples? Join the **Fetch-Kit Discord server**:
+
+[![Discord](https://img.shields.io/badge/Discord-Join_Fetch--Kit-7289DA?logo=discord&logoColor=white)](https://discord.gg/sdyPBPCDUg)
+
+
+---
+
 ## License
 
 MIT
