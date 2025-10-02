@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 1.0.5
+
+### Patch Changes
+
+- e41db9b: Added
+  - Discord section to readme
+
 ## 1.0.4
 
 ### Patch Changes
