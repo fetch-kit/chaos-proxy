@@ -1,5 +1,15 @@
 # chaos-proxy
 
+## 2.0.0
+
+### Major Changes
+
+- 4d818d2: Breaking:
+  - bodyTransform middleware now now handles bot request and response body transformations
+
+  Added:
+  - headerTransform middleware
+
 ## 1.0.5
 
 ### Patch Changes
