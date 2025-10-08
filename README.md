@@ -124,6 +124,7 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 - `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
 `throttle({ rate, chunkSize, burst, key })` — throttles bandwidth per request to a specified rate (bytes per second), with optional burst capacity and chunk size. The key option allows per-client throttling. (Implemented natively, not using koa-throttle.)
 - `bodyTransform({ request?, response? })` — parse and mutate request and/or response body with custom functions.
+- `headerTransform({ request?, response? })` — parse and mutate request and/or response headers with custom functions.
 
 ### Rate Limiting
 
@@ -232,6 +233,51 @@ startServer({
       response: (body, ctx) => {
         body.transformed = true;
         return body;
+      }
+    })
+  ]
+});
+```
+
+### Header Transform
+
+The `headerTransform` middleware allows you to parse and mutate both the request and response headers using custom transformation functions. You can specify a `request` and/or `response` transform, each as either a JavaScript function string (for YAML config) or a real function (for programmatic usage).
+
+How it works:
+- If a `request` transform is provided, it is called with a copy of the request headers and Koa context, and its return value replaces `ctx.request.headers`.
+- After downstream middleware and proxying, if a `response` transform is provided, it is called with a copy of the response headers and Koa context, and its return value replaces `ctx.response.headers`.
+- Both transforms can be used independently or together.
+
+**Example (YAML):**
+```yaml
+global:
+  - headerTransform:
+      request: "(headers, ctx) => { headers['x-added'] = 'foo'; return headers; }"
+      response: "(headers, ctx) => { headers['x-powered-by'] = 'chaos'; return headers; }"
+```
+
+This configuration adds an `x-added: foo` header to every request and an `x-powered-by: chaos` header to every response.
+
+**Note:**
+For maximum flexibility, the `request` and `response` options in `headerTransform` can be specified as JavaScript function strings in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
+
+If you call `startServer` programmatically, you can also pass real functions instead of strings:
+
+```ts
+import { startServer, headerTransform } from 'chaos-proxy';
+
+startServer({
+  target: 'http://localhost:4000',
+  port: 5000,
+  global: [
+    headerTransform({
+      request: (headers, ctx) => {
+        headers['x-added'] = 'foo';
+        return headers;
+      },
+      response: (headers, ctx) => {
+        headers['x-powered-by'] = 'chaos';
+        return headers;
       }
     })
   ]

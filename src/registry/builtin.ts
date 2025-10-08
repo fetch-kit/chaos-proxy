@@ -1,11 +1,11 @@
-import { cors } from '../middlewares/cors';
 import { registerMiddleware } from './middleware';
-// ...existing code...
+import { cors } from '../middlewares/cors';
+import { dropConnection } from '../middlewares/dropConnection';
+import { headerTransform } from '../middlewares/headerTransform';
+import { fail } from '../middlewares/fail';
+import { failRandomly } from '../middlewares/failRandomly';
 import { latency } from '../middlewares/latency';
 import { latencyRange } from '../middlewares/latencyRange';
-import { failRandomly } from '../middlewares/failRandomly';
-import { dropConnection } from '../middlewares/dropConnection';
-import { fail } from '../middlewares/fail';
 import { rateLimit } from '../middlewares/rateLimit';
 import type { RateLimitOptions } from '../middlewares/rateLimit';
 import { throttle } from '../middlewares/throttle';
@@ -27,4 +27,5 @@ export function registerBuiltins() {
   );
   registerMiddleware('rateLimit', (opts) => rateLimit(opts as unknown as RateLimitOptions));
   registerMiddleware('throttle', (opts) => throttle(opts as unknown as ThrottleOptions));
+  registerMiddleware('headerTransform', (opts) => headerTransform(opts));
 }
