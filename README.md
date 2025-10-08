@@ -78,6 +78,9 @@ global:
   - failRandomly:
       rate: 0.1
       status: 503
+  - bodyTransform:
+      request: "(body, ctx) => { body.foo = 'bar'; return body; }"
+      response: "(body, ctx) => { body.transformed = true; return body; }"
 routes:
   "GET /users/:id":
     - failRandomly:
@@ -120,7 +123,7 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 - `rateLimit({ limit, windowMs, key })` — rate limiting (by IP, header, or custom)
 - `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
 `throttle({ rate, chunkSize, burst, key })` — throttles bandwidth per request to a specified rate (bytes per second), with optional burst capacity and chunk size. The key option allows per-client throttling. (Implemented natively, not using koa-throttle.)
-- `bodyTransform({ transform })` — parse and mutate request body with a custom function.
+- `bodyTransform({ request?, response? })` — parse and mutate request and/or response body with custom functions.
 
 ### Rate Limiting
 
@@ -191,28 +194,28 @@ This configuration throttles responses to an average of 1 KB/s, sending data in 
 
 ### Body Transform
 
-The `bodyTransform` middleware parses the incoming request body (JSON, form, or text), then replaces it with the result of your custom `transform` function. This lets you inspect, modify, or completely replace the body before it is proxied or processed by other middlewares. It uses `koa-bodyparser` under the hood.
+The `bodyTransform` middleware allows you to parse and mutate both the request and response bodies using custom transformation functions. You can specify a `request` and/or `response` transform, each as either a JavaScript function string (for YAML config) or a real function (for programmatic usage). Backward compatibility with the old `transform` key is removed—use the new object shape only.
 
 How it works:
 - Parses the request body and makes it available as `ctx.request.body`.
-- Calls your `transform` function with the parsed body and Koa context.
-- Sets the return value as the new `ctx.request.body`.
-- Subsequent middlewares and proxy logic use the mutated body.
+- If a `request` transform is provided, it is called with the parsed body and Koa context, and its return value replaces `ctx.request.body`.
+- After downstream middleware and proxying, if a `response` transform is provided, it is called with the response body (`ctx.body`) and Koa context, and its return value replaces `ctx.body`.
+- Both transforms can be used independently or together.
 
-**Example:**
+**Example (YAML):**
 ```yaml
 global:
   - bodyTransform:
-      transform: "(body, ctx) => { body.foo = 'bar'; return body; }"
+      request: "(body, ctx) => { body.foo = 'bar'; return body; }"
+      response: "(body, ctx) => { body.transformed = true; return body; }"
 ```
 
-This configuration adds a `foo: 'bar'` property to every JSON request body before it is proxied to the target server.
+This configuration adds a `foo: 'bar'` property to every JSON request body and a `transformed: true` property to every JSON response body.
 
 **Note:**
-For maximum flexibility, the `transform` option in `bodyTransform` can be specified as a JavaScript function string in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
+For maximum flexibility, the `request` and `response` options in `bodyTransform` can be specified as JavaScript function strings in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
 
-
-If you call `startServer` programmatically, you can also pass a real function instead of a string:
+If you call `startServer` programmatically, you can also pass real functions instead of strings:
 
 ```ts
 import { startServer, bodyTransform } from 'chaos-proxy';
@@ -222,8 +225,12 @@ startServer({
   port: 5000,
   global: [
     bodyTransform({
-      transform: (body, ctx) => {
+      request: (body, ctx) => {
         body.foo = 'bar';
+        return body;
+      },
+      response: (body, ctx) => {
+        body.transformed = true;
         return body;
       }
     })
