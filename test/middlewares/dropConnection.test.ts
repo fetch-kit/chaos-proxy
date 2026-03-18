@@ -42,4 +42,40 @@ describe('dropConnection middleware', () => {
     expect(end).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
+
+  it('is deterministic for the same seed', async () => {
+    const runSeq = async () => {
+      const mw = dropConnection({ prob: 0.5, seed: 777 });
+      const out: boolean[] = [];
+      for (let i = 0; i < 8; i++) {
+        const destroy = vi.fn();
+        const ctx = createMockCtx(destroy);
+        await mw(ctx, async () => {});
+        out.push(destroy.mock.calls.length > 0);
+      }
+      return out;
+    };
+
+    const a = await runSeq();
+    const b = await runSeq();
+    expect(a).toEqual(b);
+  });
+
+  it('changes sequence with different seeds', async () => {
+    const runSeq = async (seed: number) => {
+      const mw = dropConnection({ prob: 0.5, seed });
+      const out: boolean[] = [];
+      for (let i = 0; i < 8; i++) {
+        const destroy = vi.fn();
+        const ctx = createMockCtx(destroy);
+        await mw(ctx, async () => {});
+        out.push(destroy.mock.calls.length > 0);
+      }
+      return out;
+    };
+
+    const a = await runSeq(11);
+    const b = await runSeq(12);
+    expect(a).not.toEqual(b);
+  });
 });

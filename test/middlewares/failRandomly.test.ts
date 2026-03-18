@@ -29,4 +29,39 @@ describe('failRandomly middleware', () => {
     expect(next2).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
+
+  it('is deterministic for the same seed', async () => {
+    const mkSeq = async () => {
+      const mw = failRandomly({ rate: 0.5, seed: 12345, status: 500 });
+      const out: boolean[] = [];
+      for (let i = 0; i < 8; i++) {
+        const ctx = createMockCtx();
+        const next = vi.fn();
+        await mw(ctx, next);
+        out.push(ctx.status === 500);
+      }
+      return out;
+    };
+
+    const a = await mkSeq();
+    const b = await mkSeq();
+    expect(a).toEqual(b);
+  });
+
+  it('changes sequence with different seeds', async () => {
+    const run = async (seed: number) => {
+      const mw = failRandomly({ rate: 0.5, seed, status: 500 });
+      const out: boolean[] = [];
+      for (let i = 0; i < 8; i++) {
+        const ctx = createMockCtx();
+        await mw(ctx, async () => {});
+        out.push(ctx.status === 500);
+      }
+      return out;
+    };
+
+    const a = await run(1);
+    const b = await run(2);
+    expect(a).not.toEqual(b);
+  });
 });

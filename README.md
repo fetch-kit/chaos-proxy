@@ -115,16 +115,18 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 ## Middleware Primitives
 
 - `latency(ms)` — delay every request
-- `latencyRange(minMs, maxMs)` — random delay
+- `latencyRange(minMs, maxMs, seed?)` — random delay (deterministic when `seed` is set)
 - `fail({ status, body })` — always fail
-- `failRandomly({ rate, status, body })` — fail with probability
+- `failRandomly({ rate, status, body, seed? })` — fail with probability (deterministic when `seed` is set)
 - `failNth({ n, status, body })` — fail every nth request
-- `dropConnection({ prob })` — randomly drop connection
+- `dropConnection({ prob, seed? })` — randomly drop connection (deterministic when `seed` is set)
 - `rateLimit({ limit, windowMs, key })` — rate limiting (by IP, header, or custom)
 - `cors({ origin, methods, headers })` — enable and configure CORS headers. All options are strings.
 `throttle({ rate, chunkSize, burst, key })` — throttles bandwidth per request to a specified rate (bytes per second), with optional burst capacity and chunk size. The key option allows per-client throttling. (Implemented natively, not using koa-throttle.)
 - `bodyTransform({ request?, response? })` — parse and mutate request and/or response body with custom functions.
 - `headerTransform({ request?, response? })` — parse and mutate request and/or response headers with custom functions.
+
+For randomness-based middlewares (`latencyRange`, `failRandomly`, `dropConnection`), you can set an optional `seed` to make behavior reproducible across runs (useful for CI and local debugging).
 
 ### Rate Limiting
 

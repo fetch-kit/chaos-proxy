@@ -17,12 +17,14 @@ export function registerBuiltins() {
   // Register built-in middleware primitives
   registerMiddleware('latency', (opts) => latency(opts.ms as number));
   registerMiddleware('latencyRange', (opts) =>
-    latencyRange(opts.minMs as number, opts.maxMs as number)
+    latencyRange(opts.minMs as number, opts.maxMs as number, opts.seed as number | string | undefined)
   );
   registerMiddleware('failRandomly', (opts) =>
-    failRandomly(opts as { rate: number; status?: number; body?: string })
+    failRandomly(opts as { rate: number; status?: number; body?: string; seed?: number | string })
   );
-  registerMiddleware('dropConnection', (opts) => dropConnection(opts as { prob?: number }));
+  registerMiddleware('dropConnection', (opts) =>
+    dropConnection(opts as { prob?: number; seed?: number | string })
+  );
   registerMiddleware('fail', (opts) => fail(opts as { status?: number; body?: string }));
   registerMiddleware('cors', (opts) =>
     cors(opts as { origin?: string; methods?: string; headers?: string })
