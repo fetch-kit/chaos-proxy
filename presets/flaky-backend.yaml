@@ -1,0 +1,14 @@
+# Preset: flaky-backend
+# Simulates an unstable upstream: intermittent 503s, connection drops, and latency jitter.
+# Replace target and port with your own values.
+target: "http://localhost:4000"
+port: 5000
+global:
+  - latencyRange:
+      minMs: 20
+      maxMs: 150
+  - failRandomly:
+      rate: 0.05      # 5% of requests return 503
+      status: 503
+  - dropConnection:
+      prob: 0.02      # 2% of requests are dropped at the connection level

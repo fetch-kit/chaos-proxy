@@ -1,0 +1,15 @@
+# Preset: mobile-3g
+# Simulates a mobile 3G connection: high latency, limited bandwidth, and occasional drops.
+# Replace target and port with your own values.
+target: "http://localhost:4000"
+port: 5000
+global:
+  - latencyRange:
+      minMs: 100
+      maxMs: 300
+  - throttle:
+      rate: 51200     # ~50 KB/s average throughput
+      chunkSize: 1024
+      burst: 10240
+  - dropConnection:
+      prob: 0.01      # 1% random connection drops

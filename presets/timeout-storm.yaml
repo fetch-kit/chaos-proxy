@@ -1,0 +1,15 @@
+# Preset: timeout-storm
+# Simulates a timeout storm: most requests are extremely slow (1–8s), connections drop
+# frequently, and a portion return 504s outright. Use to test timeout handling and fallbacks.
+# Replace target and port with your own values.
+target: "http://localhost:4000"
+port: 5000
+global:
+  - latencyRange:
+      minMs: 1000
+      maxMs: 8000
+  - dropConnection:
+      prob: 0.1       # 10% of connections are dropped
+  - failRandomly:
+      rate: 0.15      # 15% return 504 immediately
+      status: 504

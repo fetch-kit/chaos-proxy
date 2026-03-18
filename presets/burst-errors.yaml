@@ -1,0 +1,14 @@
+# Preset: burst-errors
+# Simulates periodic error bursts: every 5th request fails with a 500, plus a steady
+# 10% background error rate. Useful for testing retry logic and circuit breaker thresholds.
+# Replace target and port with your own values.
+target: "http://localhost:4000"
+port: 5000
+global:
+  - latency: 50
+  - failNth:
+      n: 5
+      status: 500
+  - failRandomly:
+      rate: 0.1       # 10% additional random failures
+      status: 503

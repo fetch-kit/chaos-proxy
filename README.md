@@ -290,6 +290,53 @@ startServer({
 
 ---
 
+## Preset Chaos Bundles
+
+The `presets/` directory contains ready-to-use YAML configurations for common chaos scenarios. Each preset applies its middleware stack globally (to every route) via the `global` array.
+
+| Preset | What it simulates |
+|---|---|
+| `mobile-3g.yaml` | High-latency, bandwidth-limited mobile connection with occasional drops |
+| `flaky-backend.yaml` | Unstable upstream: intermittent 503s, connection drops, and latency jitter |
+| `burst-errors.yaml` | Periodic error bursts: every 5th request fails, plus a 10% background error rate |
+| `timeout-storm.yaml` | Timeout storm: requests take 1–8s, frequent connection drops, and 504s |
+
+### Using a preset
+
+Copy the preset file, set `target` and `port` to match your service, then run:
+
+```bash
+npx chaos-proxy --config presets/mobile-3g.yaml
+```
+
+### Combining presets
+
+Because chaos-proxy uses a single config file, combining presets means merging their `global` arrays manually into one file. For example, to layer `flaky-backend` behaviour on top of `mobile-3g`:
+
+```yaml
+target: "http://localhost:4000"
+port: 5000
+global:
+  # from mobile-3g
+  - latencyRange:
+      minMs: 100
+      maxMs: 300
+  - throttle:
+      rate: 51200
+      chunkSize: 1024
+      burst: 10240
+  # from flaky-backend
+  - failRandomly:
+      rate: 0.05
+      status: 503
+  - dropConnection:
+      prob: 0.02
+```
+
+Middleware executes top-to-bottom, so put latency first if you want the added delay to precede error injection.
+
+---
+
 ## Extensibility
 
 Register custom middleware: `registerMiddleware(name, factory)`
