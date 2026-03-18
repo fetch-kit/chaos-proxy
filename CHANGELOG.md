@@ -1,5 +1,13 @@
 # chaos-proxy
 
+## 2.2.0
+
+### Minor Changes
+
+- abb7281: Added:
+  - Deterministic seed support for randomness-based middlewares
+  - Preset chaos bundles in presets/
+
 ## 2.1.0
 
 ### Minor Changes
