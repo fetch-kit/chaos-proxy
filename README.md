@@ -216,6 +216,8 @@ This configuration adds a `foo: 'bar'` property to every JSON request body and a
 **Note:**
 For maximum flexibility, the `request` and `response` options in `bodyTransform` can be specified as JavaScript function strings in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
 
+`bodyTransform` works by buffering request/response bodies so they can be mutated before forwarding/sending. This buffering behavior is an explicit tradeoff of enabling body transformation.
+
 If you call `startServer` programmatically, you can also pass real functions instead of strings:
 
 ```ts

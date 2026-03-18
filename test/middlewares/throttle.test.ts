@@ -12,6 +12,24 @@ function createMockCtx(body: Readable): Context {
   } as unknown as Context;
 }
 
+async function runThroughThrottle(mw: ReturnType<typeof throttle>, size: number): Promise<number> {
+  const input = Readable.from(Buffer.alloc(size, 'x'));
+  const output: Buffer[] = [];
+  const writable = new Writable({
+    write(chunk, _enc, cb) {
+      output.push(chunk);
+      cb();
+    },
+  });
+
+  const ctx = createMockCtx(input);
+  const start = Date.now();
+  await mw(ctx, async () => {});
+  await new Promise((resolve) => (ctx.body as Readable).pipe(writable).on('finish', resolve));
+  expect(Buffer.concat(output).length).toBe(size);
+  return (Date.now() - start) / 1000;
+}
+
 describe('throttle middleware', () => {
   it('throttles output to configured rate', async () => {
     const rate = 1024; // 1KB/s
@@ -72,5 +90,22 @@ describe('throttle middleware', () => {
     const ctx = { body: 'not a stream', ip: '127.0.0.1', get: () => '' } as unknown as Context;
     await mw(ctx, async () => {});
     expect(ctx.body).toBe('not a stream');
+  });
+
+  it('shares burst budget across sequential responses for the same key', async () => {
+    const rate = 1024;
+    const chunkSize = 512;
+    const burst = 1024;
+    const opts: ThrottleOptions = { rate, chunkSize, burst };
+    const mw = throttle(opts);
+
+    // First response should be mostly covered by burst.
+    const firstElapsed = await runThroughThrottle(mw, 1024);
+    // Second immediate response should be throttled (burst already consumed).
+    const secondElapsed = await runThroughThrottle(mw, 1024);
+
+    expect(firstElapsed).toBeLessThan(0.5);
+    expect(secondElapsed).toBeGreaterThanOrEqual(0.8);
+    expect(secondElapsed).toBeGreaterThan(firstElapsed + 0.5);
   });
 });

@@ -3,6 +3,7 @@ import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import type { Middleware } from 'koa';
 import type { Server } from 'http';
+import http from 'http';
 import { startServer } from '../src/server';
 
 let testServer: Server;
@@ -209,5 +210,78 @@ describe('startServer edge cases', () => {
     expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/Chaos Proxy listening on port/));
     if (app) (app as Server).close();
     logSpy.mockRestore();
+  });
+});
+
+describe('proxy transport behavior', () => {
+  it('reuses upstream sockets via keep-alive agent', async () => {
+    const upstreamPort = PROXY_PORT + 20;
+    const proxyPort = PROXY_PORT + 21;
+    const sockets = new Set<string>();
+
+    const upstream = http.createServer((req, res) => {
+      const socket = req.socket;
+      sockets.add(`${socket.remoteAddress}:${socket.remotePort}`);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+    const proxy = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+
+    try {
+      const a = await fetch(`http://localhost:${proxyPort}/x`);
+      expect(a.status).toBe(200);
+      await a.text();
+
+      const b = await fetch(`http://localhost:${proxyPort}/y`);
+      expect(b.status).toBe(200);
+      await b.text();
+
+      // With keep-alive agent, repeated requests should reuse the same upstream socket.
+      expect(sockets.size).toBe(1);
+    } finally {
+      proxy.close();
+      upstream.close();
+    }
+  });
+
+  it('propagates client abort to upstream response stream', async () => {
+    const upstreamPort = PROXY_PORT + 22;
+    const proxyPort = PROXY_PORT + 23;
+    let upstreamClosed = false;
+
+    const upstream = http.createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      // Keep response open; proxy should close it when downstream aborts.
+      const timer = setTimeout(() => {
+        res.end('too late');
+      }, 5000);
+      res.on('close', () => {
+        clearTimeout(timer);
+        upstreamClosed = true;
+      });
+    });
+
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+    const proxy = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+
+    try {
+      const controller = new AbortController();
+      const requestPromise = fetch(`http://localhost:${proxyPort}/slow`, {
+        signal: controller.signal,
+      });
+
+      setTimeout(() => controller.abort(), 50);
+
+      await expect(requestPromise).rejects.toThrow();
+
+      // Give cancellation/cleanup time to propagate to upstream.
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      expect(upstreamClosed).toBe(true);
+    } finally {
+      proxy.close();
+      upstream.close();
+    }
   });
 });

@@ -27,7 +27,6 @@
   "keywords": [
     "proxy",
     "chaos",
-    "express",
     "testing",
     "network",
     "typescript",
@@ -45,9 +44,6 @@
   "type": "module",
   "dependencies": {
     "@koa/router": "^14.0.0",
-    "@types/express": "^5.0.3",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
     "koa": "^3.0.1",
     "koa-bodyparser": "^4.4.1",
     "koa-ratelimit": "^6.0.0",

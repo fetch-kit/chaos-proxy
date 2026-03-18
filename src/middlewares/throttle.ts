@@ -25,6 +25,10 @@ class ThrottleStream extends Transform {
     this.burstLeft = this.burst;
   }
 
+  getBurstLeft() {
+    return this.burstLeft;
+  }
+
   _transform(chunk: Buffer, encoding: BufferEncoding, callback: (err?: Error | null) => void) {
     let offset = 0;
     const sendChunk = () => {
@@ -59,7 +63,7 @@ class ThrottleStream extends Transform {
 }
 
 export function throttle(opts: ThrottleOptions): Middleware {
-  const db = new LRUCache<string, { burstLeft: number }>({ max: 10000 });
+  const db = new LRUCache<string, { burstLeft: number; lastUpdated: number }>({ max: 10000 });
   let getKey: (ctx: Context) => string;
   if (typeof opts.key === 'function') {
     getKey = opts.key;
@@ -75,10 +79,23 @@ export function throttle(opts: ThrottleOptions): Middleware {
     let burstLeft = opts.burst || 0;
     if (opts.burst) {
       const entry = db.get(key);
-      burstLeft = entry?.burstLeft ?? opts.burst;
-      db.set(key, { burstLeft: Math.max(0, burstLeft) });
+      if (entry) {
+        const elapsedSec = (Date.now() - entry.lastUpdated) / 1000;
+        const refilled = entry.burstLeft + elapsedSec * opts.rate;
+        burstLeft = Math.min(opts.burst, Math.max(0, refilled));
+      }
     }
     const throttler = new ThrottleStream({ ...opts, burst: burstLeft });
+    if (opts.burst) {
+      const persistState = () => {
+        db.set(key, {
+          burstLeft: Math.max(0, throttler.getBurstLeft()),
+          lastUpdated: Date.now(),
+        });
+      };
+      throttler.once('end', persistState);
+      throttler.once('error', persistState);
+    }
     ctx.body = ctx.body.pipe(throttler);
   };
 }

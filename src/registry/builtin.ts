@@ -1,4 +1,6 @@
 import { registerMiddleware } from './middleware';
+import { bodyTransform } from '../middlewares/bodyTransform';
+import type { BodyTransformOptions } from '../middlewares/bodyTransform';
 import { cors } from '../middlewares/cors';
 import { dropConnection } from '../middlewares/dropConnection';
 import { headerTransform } from '../middlewares/headerTransform';
@@ -27,5 +29,6 @@ export function registerBuiltins() {
   );
   registerMiddleware('rateLimit', (opts) => rateLimit(opts as unknown as RateLimitOptions));
   registerMiddleware('throttle', (opts) => throttle(opts as unknown as ThrottleOptions));
+  registerMiddleware('bodyTransform', (opts) => bodyTransform(opts as unknown as BodyTransformOptions));
   registerMiddleware('headerTransform', (opts) => headerTransform(opts));
 }
