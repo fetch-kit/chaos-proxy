@@ -19,7 +19,8 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "test": "vitest",
-    "test:cli": "ts-node --prefer-ts-exts src/cli.ts",
+    "cli:start": "npm run build && node dist/cli.js",
+    "test:cli": "npm run cli:start --",
     "dev": "ts-node --esm src/index.ts",
     "prepare": "husky install",
     "prepublishOnly": "npm run build && npm run test"

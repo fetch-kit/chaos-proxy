@@ -4,13 +4,7 @@ import { resolveMiddleware } from '../registry/middleware';
 import type { ChaosConfig } from './loader';
 import type { Middleware } from 'koa';
 
-export function parseConfig(yamlString: string): ChaosConfig {
-  let parsed: unknown;
-  try {
-    parsed = yaml.parse(yamlString);
-  } catch (e) {
-    throw new Error(`YAML parse error: ${(e as Error).message}`);
-  }
+export function validateConfigObject(parsed: unknown): ChaosConfig {
   // Basic validation
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('Config must be a YAML object');
@@ -35,6 +29,16 @@ export function parseConfig(yamlString: string): ChaosConfig {
     config.port = 5000;
   }
   return config as ChaosConfig;
+}
+
+export function parseConfig(yamlString: string): ChaosConfig {
+  let parsed: unknown;
+  try {
+    parsed = yaml.parse(yamlString);
+  } catch (e) {
+    throw new Error(`YAML parse error: ${(e as Error).message}`);
+  }
+  return validateConfigObject(parsed);
 }
 
 export function resolveConfigMiddlewares(config: ChaosConfig): {

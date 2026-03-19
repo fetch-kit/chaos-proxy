@@ -285,3 +285,164 @@ describe('proxy transport behavior', () => {
     }
   });
 });
+
+describe('runtime config reload', () => {
+  it('reloads config and applies new middleware chain for new requests', async () => {
+    const proxyPort = PROXY_PORT + 30;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockImplementation((cfg) => {
+      const withHeader = (cfg as Record<string, unknown>).mode === 'on';
+      return {
+        global: withHeader
+          ? [
+              (async (ctx, next) => {
+                ctx.set('X-Reloaded', 'yes');
+                await next();
+              }) as Middleware,
+            ]
+          : [],
+        routes: {},
+      };
+    });
+
+    const proxy = startServer({ target: TARGET, port: proxyPort } as unknown as Parameters<typeof startServer>[0]);
+
+    try {
+      const before = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(before.headers.get('x-reloaded')).toBeNull();
+
+      const reloadRes = await fetch(`http://localhost:${proxyPort}/reload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: TARGET, port: proxyPort, mode: 'on' }),
+      });
+      expect(reloadRes.status).toBe(200);
+      const reloadBody = await reloadRes.json() as { ok: boolean; version: number; reloadMs: number };
+      expect(reloadBody.ok).toBe(true);
+      expect(reloadBody.version).toBeGreaterThan(1);
+
+      const after = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(after.headers.get('x-reloaded')).toBe('yes');
+    } finally {
+      proxy.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('rejects invalid reload and keeps previous runtime state', async () => {
+    const proxyPort = PROXY_PORT + 31;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (ctx, next) => {
+          ctx.set('X-Stable', 'old');
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const proxy = startServer({ target: TARGET, port: proxyPort });
+
+    try {
+      const before = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(before.headers.get('x-stable')).toBe('old');
+
+      const reloadRes = await fetch(`http://localhost:${proxyPort}/reload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ port: proxyPort }),
+      });
+      expect(reloadRes.status).toBe(400);
+      const body = await reloadRes.json() as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('target');
+
+      const after = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(after.headers.get('x-stable')).toBe('old');
+    } finally {
+      proxy.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('keeps in-flight requests on old snapshot while new requests use new snapshot', async () => {
+    const proxyPort = PROXY_PORT + 32;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockImplementation((cfg) => {
+      const mode = (cfg as Record<string, unknown>).mode;
+      if (mode === 'fast') {
+        return {
+          global: [
+            (async (ctx, next) => {
+              ctx.set('X-Snapshot', 'new');
+              await next();
+            }) as Middleware,
+          ],
+          routes: {},
+        };
+      }
+      return {
+        global: [
+          (async (ctx, next) => {
+            await new Promise((resolve) => setTimeout(resolve, 120));
+            ctx.set('X-Snapshot', 'old');
+            await next();
+          }) as Middleware,
+        ],
+        routes: {},
+      };
+    });
+
+    const proxy = startServer({ target: TARGET, port: proxyPort, mode: 'slow' } as unknown as Parameters<typeof startServer>[0]);
+
+    try {
+      const inFlightPromise = fetch(`http://localhost:${proxyPort}/api/cc`);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const reloadRes = await fetch(`http://localhost:${proxyPort}/reload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: TARGET, port: proxyPort, mode: 'fast' }),
+      });
+      expect(reloadRes.status).toBe(200);
+
+      const inFlightResponse = await inFlightPromise;
+      expect(inFlightResponse.headers.get('x-snapshot')).toBe('old');
+
+      const postReloadResponse = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(postReloadResponse.headers.get('x-snapshot')).toBe('new');
+    } finally {
+      proxy.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('rejects overlapping reload requests with 409', async () => {
+    const proxyPort = PROXY_PORT + 33;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({ global: [], routes: {} });
+
+    const proxy = startServer({ target: TARGET, port: proxyPort });
+
+    try {
+      const first = proxy.reloadConfig({ target: TARGET, port: proxyPort, mode: 'a' });
+      const second = proxy.reloadConfig({ target: TARGET, port: proxyPort, mode: 'b' });
+
+      const [firstResult, secondResult] = await Promise.all([first, second]);
+      expect([firstResult.ok, secondResult.ok].sort()).toEqual([false, true]);
+      const failed = firstResult.ok ? secondResult : firstResult;
+      if (failed.ok) {
+        throw new Error('Expected one reload call to fail with overlap');
+      }
+      expect(failed.statusCode).toBe(409);
+    } finally {
+      proxy.close();
+      parserSpy.mockRestore();
+    }
+  });
+});
