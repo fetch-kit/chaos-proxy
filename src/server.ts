@@ -210,16 +210,7 @@ async function proxyRequest(
       proxyRes.on('end', () => {
         const body = Buffer.concat(chunks);
         if (body.length > 0) {
-          const contentType = String(proxyRes.headers['content-type'] || '');
-          if (contentType.includes('application/json')) {
-            try {
-              ctx.body = JSON.parse(body.toString('utf8'));
-            } catch {
-              ctx.body = body;
-            }
-          } else {
-            ctx.body = body;
-          }
+          ctx.body = body;
         }
         settle();
       });

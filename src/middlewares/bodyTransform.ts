@@ -59,7 +59,11 @@ export function bodyTransform(opts: BodyTransformOptions): Middleware {
     }
     // Transform response body if needed
     if (responseTransform && ctx.body !== undefined) {
-      ctx.body = responseTransform(ctx.body, ctx);
+      let responseBody: unknown = ctx.body;
+      if (Buffer.isBuffer(responseBody)) {
+        try { responseBody = JSON.parse(responseBody.toString('utf8')); } catch { /* keep raw buffer */ }
+      }
+      ctx.body = responseTransform(responseBody, ctx);
     }
   };
 }
