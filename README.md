@@ -58,6 +58,77 @@ await server.close();
 
 ---
 
+## Runtime Config Reload
+
+Chaos Proxy supports full runtime reloads without process restart.
+
+- Endpoint: `POST /reload`
+- Content type: `application/json`
+- Payload: full config snapshot (same shape as `chaos.yaml`)
+- Behavior: build-then-swap (all-or-nothing)
+
+### Request Example
+
+```bash
+curl -X POST http://localhost:5000/reload \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target": "http://localhost:4000",
+    "port": 5000,
+    "global": [
+      { "latency": { "ms": 120 } },
+      { "failRandomly": { "rate": 0.05, "status": 503 } }
+    ],
+    "routes": {
+      "GET /users/:id": [
+        { "failNth": { "n": 3, "status": 500 } }
+      ]
+    }
+  }'
+```
+
+### Success Response
+
+```json
+{
+  "ok": true,
+  "version": 2,
+  "reloadMs": 4
+}
+```
+
+### Failure Responses
+
+- `400` invalid config/payload (runtime state is unchanged)
+- `409` reload already in progress
+- `415` unsupported content type
+
+```json
+{
+  "ok": false,
+  "error": "Config must include a string \"target\" field",
+  "version": 2,
+  "reloadMs": 1
+}
+```
+
+### Programmatic Reload
+
+`startServer(...)` returns a server object with:
+
+- `reloadConfig(newConfig)`
+- `getRuntimeVersion()`
+
+### Edge-Case Semantics
+
+- In-flight requests are deterministic: they continue on the snapshot captured at request start.
+- New requests after a successful swap use the new snapshot immediately.
+- If a route is deleted in the new config, in-flight requests that already matched it still finish on the old snapshot.
+- Middleware internal state is rebuilt on reload (for example, rate-limit/throttle counters reset).
+- Reload is all-or-nothing: parse/validate/build failures never partially apply.
+
+---
+
 ## Configuration (`chaos.yaml`)
 
 ### Format
@@ -339,9 +410,53 @@ Middleware executes top-to-bottom, so put latency first if you want the added de
 
 ## Extensibility
 
-Register custom middleware: `registerMiddleware(name, factory)`
+You can register custom middleware factories using `registerMiddleware(name, factory)`. Once registered, your middleware can be referenced by name in any config, including reload payloads.
 
-Under the hood, `chaos-proxy` uses [Koa](https://koajs.com/), so your custom middleware can leverage the full Koa context and ecosystem. Note that Koa middleware functions are async and take `(ctx, next)` parameters. Read more in the [Koa docs](https://koajs.com/#middleware). The reason for switching from Express to Koa is to enable async/await support which helps intercept both requests and responses more easily. In the /examples/middlewares folder, you can find a custom middleware implementation.
+```ts
+import { registerMiddleware, startServer } from 'chaos-proxy';
+
+// Register before starting the server
+registerMiddleware('customLogger', (opts) => {
+  const prefix = opts.prefix ?? '[chaos]';
+  return async (ctx, next) => {
+    console.log(`${prefix} ${ctx.method} ${ctx.url}`);
+    await next();
+  };
+});
+
+const server = startServer({
+  target: 'http://localhost:4000',
+  port: 5000,
+  global: [
+    { customLogger: { prefix: '[myapp]' } }
+  ],
+});
+```
+
+Then reference it in YAML:
+
+```yaml
+global:
+  - customLogger:
+      prefix: "[myapp]"
+```
+
+Or in a reload payload:
+
+```json
+{
+  "target": "http://localhost:4000",
+  "global": [
+    { "customLogger": { "prefix": "[spike]" } }
+  ]
+}
+```
+
+**Rules:**
+- Middleware must be registered in the running process before it is referenced in a config or reload payload.
+- If a reload payload references an unknown middleware name, the reload fails and the active runtime is unchanged.
+- Factories receive an `opts` object from config and must return a Koa `async (ctx, next)` middleware function.
+- See [examples/middlewares/](examples/middlewares/) for a working example.
 
 ---
 

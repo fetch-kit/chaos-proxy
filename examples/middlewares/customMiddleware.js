@@ -1,15 +1,19 @@
-// Example of a custom middleware for chaos-proxy
-import { registerMiddleware } from '../../src/registry/middleware';
+// Example of a custom middleware factory for chaos-proxy.
+//
+// Usage:
+//   import { registerMiddleware, startServer } from 'chaos-proxy';
+//   import './customMiddleware.js'; // registers 'customLogger'
+//
+// Then in config:
+//   global:
+//     - customLogger:
+//         prefix: "[myapp]"
+import { registerMiddleware } from 'chaos-proxy';
 
-// Define your custom middleware
-function customLogger(req, res, next) {
-  console.log('Custom middleware:', req.method, req.url);
-  next();
-}
-
-// Register the middleware with chaos-proxy
-registerMiddleware('customLogger', () => customLogger);
-
-// Usage in config.yaml:
-// global:
-//   - customLogger: {}
+registerMiddleware('customLogger', (opts) => {
+  const prefix = opts.prefix ?? '[chaos]';
+  return async (ctx, next) => {
+    console.log(`${prefix} ${ctx.method} ${ctx.url}`);
+    await next();
+  };
+});
