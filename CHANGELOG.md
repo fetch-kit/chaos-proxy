@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 3.0.1
+
+### Patch Changes
+
+- fe0e586: Fixed:
+  - Response bodies now pass through as raw buffers, preserving upstream formatting and Content-Length.
+
 ## 3.0.0
 
 ### Major Changes
