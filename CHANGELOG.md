@@ -1,5 +1,13 @@
 # chaos-proxy
 
+## 3.0.0
+
+### Major Changes
+
+- 09a8089: Added
+  - Config hot reload (programmatically or via POST /reload endpoint)
+  - Improved documentation
+
 ## 2.2.0
 
 ### Minor Changes
