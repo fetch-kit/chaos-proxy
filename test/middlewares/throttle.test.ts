@@ -84,12 +84,35 @@ describe('throttle middleware', () => {
     expect(Buffer.concat(output).length).toBe(2048);
   });
 
-  it('does nothing if ctx.body is not a stream', async () => {
+  it('does nothing if ctx.body is null or undefined', async () => {
     const opts: ThrottleOptions = { rate: 1024 };
     const mw = throttle(opts);
-    const ctx = { body: 'not a stream', ip: '127.0.0.1', get: () => '' } as unknown as Context;
+    const ctx = { body: null, ip: '127.0.0.1', get: () => '' } as unknown as Context;
     await mw(ctx, async () => {});
-    expect(ctx.body).toBe('not a stream');
+    expect(ctx.body).toBeNull();
+  });
+
+  it('throttles a string body by wrapping it in a stream', async () => {
+    const opts: ThrottleOptions = { rate: 1024 * 1024 }; // high rate so test is fast
+    const mw = throttle(opts);
+    const ctx = { body: 'hello world', ip: '127.0.0.1', get: () => '' } as unknown as Context;
+    await mw(ctx, async () => {});
+    // body should now be a readable stream (ThrottleStream)
+    expect(typeof (ctx.body as { pipe?: unknown }).pipe).toBe('function');
+  });
+
+  it('throttles a Buffer body by wrapping it in a stream', async () => {
+    const opts: ThrottleOptions = { rate: 1024 * 1024 }; // high rate so test is fast
+    const mw = throttle(opts);
+    const buf = Buffer.from('hello buffer');
+    const ctx = { body: buf, ip: '127.0.0.1', get: () => '' } as unknown as Context;
+    await mw(ctx, async () => {});
+    expect(typeof (ctx.body as { pipe?: unknown }).pipe).toBe('function');
+    // drain stream and verify content is preserved
+    const output: Buffer[] = [];
+    const writable = new Writable({ write(chunk, _enc, cb) { output.push(chunk); cb(); } });
+    await new Promise((resolve) => (ctx.body as Readable).pipe(writable).on('finish', resolve));
+    expect(Buffer.concat(output).toString()).toBe('hello buffer');
   });
 
   it('shares burst budget across sequential responses for the same key', async () => {

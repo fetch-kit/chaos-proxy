@@ -1,4 +1,4 @@
-import { Transform } from 'stream';
+import { Transform, Readable } from 'stream';
 import type { Middleware, Context } from 'koa';
 import { LRUCache } from 'lru-cache';
 
@@ -74,7 +74,21 @@ export function throttle(opts: ThrottleOptions): Middleware {
   }
   return async (ctx, next) => {
     await next();
-    if (!ctx.body || typeof ctx.body.pipe !== 'function') return;
+    if (!ctx.body) return;
+
+    // Normalise body to a Readable so ThrottleStream works for both buffered and
+    // streaming responses. Koa accepts a Readable as ctx.body and pipes it out.
+    let bodyStream: Readable;
+    if (Buffer.isBuffer(ctx.body)) {
+      bodyStream = Readable.from(ctx.body);
+    } else if (typeof ctx.body === 'string') {
+      bodyStream = Readable.from(Buffer.from(ctx.body));
+    } else if (typeof (ctx.body as { pipe?: unknown }).pipe === 'function') {
+      bodyStream = ctx.body as Readable;
+    } else {
+      return; // unknown body type (e.g. JSON object not yet serialised), skip
+    }
+
     const key = getKey(ctx);
     let burstLeft = opts.burst || 0;
     if (opts.burst) {
@@ -96,6 +110,6 @@ export function throttle(opts: ThrottleOptions): Middleware {
       throttler.once('end', persistState);
       throttler.once('error', persistState);
     }
-    ctx.body = ctx.body.pipe(throttler);
+    ctx.body = bodyStream.pipe(throttler);
   };
 }
