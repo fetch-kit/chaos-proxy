@@ -203,23 +203,43 @@ async function proxyRequest(
           ctx.set(key, value as string | string[]);
         }
       }
-      // Buffer response body so downstream transforms (bodyTransform, headerTransform)
-      // can intercept ctx.body before Koa sends the response.
-      const chunks: Buffer[] = [];
-      proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
-      proxyRes.on('end', () => {
-        const body = Buffer.concat(chunks);
-        if (body.length > 0) {
-          ctx.body = body;
-        }
+      // Detect if response is streaming (chunked, SSE, or no content-length).
+      // If so, pipe directly; otherwise buffer for middleware transforms.
+      const isStream =
+        !proxyRes.headers['content-length'] &&
+        (proxyRes.headers['transfer-encoding'] === 'chunked' ||
+         (proxyRes.headers['content-type'] ?? '').startsWith('text/event-stream'));
+      ctx.state.isStream = isStream;
+
+      if (isStream) {
+        // Stream mode: pipe upstream directly to response, skip buffering.
+        // Settle immediately; Koa will handle async streaming.
+        ctx.body = proxyRes;
+        proxyRes.once('error', (err) => {
+          if (options?.verbose) console.error('[Proxy] Response error:', err);
+          ctx.status = 502;
+          ctx.body = (err as Error).message;
+        });
         settle();
-      });
-      proxyRes.on('error', (err) => {
-        if (options?.verbose) console.error('[Proxy] Response error:', err);
-        ctx.status = 502;
-        ctx.body = (err as Error).message;
-        settle();
-      });
+      } else {
+        // Buffered mode: collect chunks so downstream transforms (bodyTransform, headerTransform)
+        // can intercept ctx.body before Koa sends the response.
+        const chunks: Buffer[] = [];
+        proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+        proxyRes.on('end', () => {
+          const body = Buffer.concat(chunks);
+          if (body.length > 0) {
+            ctx.body = body;
+          }
+          settle();
+        });
+        proxyRes.on('error', (err) => {
+          if (options?.verbose) console.error('[Proxy] Response error:', err);
+          ctx.status = 502;
+          ctx.body = (err as Error).message;
+          settle();
+        });
+      }
     });
 
     proxyReq.on('error', (err) => {

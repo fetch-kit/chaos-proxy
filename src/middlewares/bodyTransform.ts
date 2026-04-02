@@ -57,8 +57,8 @@ export function bodyTransform(opts: BodyTransformOptions): Middleware {
     } else {
       await next();
     }
-    // Transform response body if needed
-    if (responseTransform && ctx.body !== undefined) {
+    // Transform response body if needed (skip for streaming responses).
+    if (responseTransform && ctx.body !== undefined && !ctx.state.isStream) {
       let responseBody: unknown = ctx.body;
       if (Buffer.isBuffer(responseBody)) {
         try { responseBody = JSON.parse(responseBody.toString('utf8')); } catch { /* keep raw buffer */ }

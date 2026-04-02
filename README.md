@@ -185,6 +185,20 @@ Chaos Proxy uses Koa Router for path matching, supporting named parameters (e.g.
 
 ## Middleware Primitives
 
+### Response Stream Handling
+
+Chaos Proxy decides per response whether to treat it as a stream or a buffered body:
+
+- Streamed responses are passed through as streams.
+- Non-stream responses are buffered so response-body transforms can run.
+
+Current stream detection marks a response as stream when:
+
+- `content-length` is missing, and
+- either `transfer-encoding: chunked` is present or `content-type` starts with `text/event-stream`.
+
+When a response is detected as streamed, `ctx.state.isStream` is set to `true` for downstream middleware.
+
 - `latency(ms)` — delay every request
 - `latencyRange(minMs, maxMs, seed?)` — random delay (deterministic when `seed` is set)
 - `fail({ status, body })` — always fail
@@ -249,6 +263,8 @@ This configuration restricts CORS to requests from `https://example.com` using o
 
 The `throttle` middleware limits the bandwidth of responses to simulate slow network conditions.
 
+It supports stream, `Buffer`, and string response bodies.
+
 - `rate`: The average rate (in bytes per second) to allow (e.g., 1024 for 1 KB/s).
 - `chunkSize`: The size of each chunk to send (in bytes). Smaller chunks can simulate more granular throttling (default 16384).
 - `burst`: The maximum burst size (in bytes) that can be sent at once (default 0, meaning no burst).
@@ -273,7 +289,8 @@ The `bodyTransform` middleware allows you to parse and mutate both the request a
 How it works:
 - Parses the request body and makes it available as `ctx.request.body`.
 - If a `request` transform is provided, it is called with the parsed body and Koa context, and its return value replaces `ctx.request.body`.
-- After downstream middleware and proxying, if a `response` transform is provided, it is called with the response body (`ctx.body`) and Koa context, and its return value replaces `ctx.body`.
+- After downstream middleware and proxying, if a `response` transform is provided and `ctx.state.isStream` is not `true`, it is called with the response body (`ctx.body`) and Koa context, and its return value replaces `ctx.body`.
+- For streamed responses (`ctx.state.isStream === true`), response transform is skipped.
 - Both transforms can be used independently or together.
 
 **Example (YAML):**
@@ -289,7 +306,7 @@ This configuration adds a `foo: 'bar'` property to every JSON request body and a
 **Note:**
 For maximum flexibility, the `request` and `response` options in `bodyTransform` can be specified as JavaScript function strings in your YAML config. This allows you to define custom transformation logic directly in the config file. Be aware that evaluating JS from config can introduce security and syntax risks. Use with care and only in trusted environments.
 
-`bodyTransform` works by buffering request/response bodies so they can be mutated before forwarding/sending. This buffering behavior is an explicit tradeoff of enabling body transformation.
+`bodyTransform` request transforms still operate on parsed request bodies. Response transforms operate on non-stream responses only; streamed responses are passed through unchanged.
 
 If you call `startServer` programmatically, you can also pass real functions instead of strings:
 
@@ -456,6 +473,7 @@ Or in a reload payload:
 - Middleware must be registered in the running process before it is referenced in a config or reload payload.
 - If a reload payload references an unknown middleware name, the reload fails and the active runtime is unchanged.
 - Factories receive an `opts` object from config and must return a Koa `async (ctx, next)` middleware function.
+- For response-aware custom middleware, use `ctx.state.isStream` to branch behavior for streamed responses.
 - See [examples/middlewares/](examples/middlewares/) for a working example.
 
 ---

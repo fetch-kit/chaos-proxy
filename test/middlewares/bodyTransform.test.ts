@@ -12,6 +12,7 @@ function createMockCtx(body: unknown, contentType = 'application/json'): Context
     body: undefined,
     set: () => {},
     method: 'POST',
+    state: {},
   } as unknown as Context;
 }
 
@@ -157,5 +158,49 @@ describe('bodyTransform middleware', () => {
 
   it('throws for invalid function string in response', async () => {
     expect(() => bodyTransform({ response: 'not valid js' })).toThrow();
+  });
+
+  it('skips response transform when isStream is true', async () => {
+    const transformCalled = { request: false, response: false };
+    const mw = bodyTransform({
+      request: {
+        transform: (body: unknown) => {
+          transformCalled.request = true;
+          return body;
+        },
+      },
+      response: {
+        transform: (body: unknown) => {
+          transformCalled.response = true;
+          return body;
+        },
+      },
+    });
+    const ctx = createMockCtx({ test: true });
+    ctx.body = { original: 'data' };
+    ctx.state.isStream = true;
+    await mw(ctx, async () => {});
+    expect(transformCalled.request).toBe(true);
+    expect(transformCalled.response).toBe(false);
+    expect(ctx.body).toEqual({ original: 'data' });
+  });
+
+  it('keeps response body unchanged when isStream is true', async () => {
+    const mw = bodyTransform({
+      response: {
+        transform: (body: unknown) => {
+          if (typeof body === 'object' && body !== null) {
+            (body as Record<string, unknown>).mutated = true;
+          }
+          return body;
+        },
+      },
+    });
+    const ctx = createMockCtx(undefined);
+    ctx.body = { foo: 'bar' };
+    ctx.state.isStream = true;
+    await mw(ctx, async () => {});
+    expect(ctx.body).toEqual({ foo: 'bar' });
+    expect((ctx.body as Record<string, unknown>).mutated).toBeUndefined();
   });
 });
