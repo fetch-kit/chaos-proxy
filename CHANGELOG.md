@@ -1,5 +1,14 @@
 # chaos-proxy
 
+## 3.2.0
+
+### Minor Changes
+
+- 79d64f9: Added
+  - Observability support
+  - Expanded test coverage for telemetry modules, server branches, config parser, and middlewares
+  - docs folder with full reference guides
+
 ## 3.1.0
 
 ### Minor Changes
