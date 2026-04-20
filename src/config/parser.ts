@@ -16,6 +16,9 @@ export function validateConfigObject(parsed: unknown): ChaosConfig {
   if (config.global && !Array.isArray(config.global)) {
     throw new Error('Config "global" must be an array');
   }
+  if (config.otel && typeof config.otel !== 'object') {
+    throw new Error('Config "otel" must be an object');
+  }
   if (config.routes && typeof config.routes !== 'object') {
     throw new Error('Config "routes" must be a map of path to array');
   }
@@ -47,12 +50,16 @@ export function resolveConfigMiddlewares(config: ChaosConfig): {
 } {
   const global: Middleware[] = [];
   const routes: Record<string, Middleware[]> = {};
+  const globalNodes: Record<string, unknown>[] = [
+    ...(config.otel
+      ? [{ otel: config.otel as Record<string, unknown> }]
+      : []),
+    ...((config.global ?? []) as Record<string, unknown>[]),
+  ];
 
   // Resolve global middlewares
-  if (Array.isArray(config.global)) {
-    for (const node of config.global) {
-      global.push(resolveMiddleware(node as Record<string, unknown>));
-    }
+  for (const node of globalNodes) {
+    global.push(resolveMiddleware(node));
   }
 
   // Resolve route middlewares

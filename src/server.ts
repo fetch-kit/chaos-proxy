@@ -6,6 +6,7 @@ import Router from '@koa/router';
 
 import type { ChaosConfig } from './config/loader';
 import { resolveConfigMiddlewares, validateConfigObject } from './config/parser';
+import { shutdownAllTelemetryExporters } from './telemetry';
 
 type RuntimeState = {
   config: ChaosConfig;
@@ -26,7 +27,7 @@ const MAX_RELOAD_BODY_BYTES = 1024 * 1024;
 
 function registerRouteMiddlewares(router: Router, routes: Record<string, Middleware[]>) {
   for (const [routeKey, middlewares] of Object.entries(routes)) {
-    const methodPathMatch = routeKey.match(/^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(.+)$/i);
+    const methodPathMatch = routeKey.match(/^([A-Z]+)\s+(.+)$/i);
     if (methodPathMatch && methodPathMatch[1] && methodPathMatch[2]) {
       const method = methodPathMatch[1].toLowerCase();
       const path = methodPathMatch[2];
@@ -352,6 +353,7 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     }
 
     const snapshot = runtimeState;
+    ctx.state.proxyTarget = snapshot.config.target;
     await runMiddlewareChain(ctx, snapshot.chaosChain, async () => {
       await proxyRequest(ctx, snapshot.config.target, httpAgent, httpsAgent, options);
     });
@@ -364,6 +366,9 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
   server.on('close', () => {
     httpAgent.destroy();
     httpsAgent.destroy();
+    shutdownAllTelemetryExporters().catch((err: unknown) => {
+      console.error('[chaos-proxy telemetry] Failed to shutdown exporters:', err);
+    });
   });
 
   const reloadableServer = server as ChaosProxyServer;

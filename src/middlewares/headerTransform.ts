@@ -3,12 +3,15 @@ import type { Context } from 'koa';
 export type HeaderTransformFn = (headers: Record<string, string | string[] | undefined>, ctx: Context) => Record<string, string | string[] | undefined>;
 
 export interface HeaderTransformConfig {
-  request?: string | { transform: HeaderTransformFn };
-  response?: string | { transform: HeaderTransformFn };
+  request?: HeaderTransformFn | string | { transform: HeaderTransformFn };
+  response?: HeaderTransformFn | string | { transform: HeaderTransformFn };
 }
 
-function parseTransform(fnOrString: string | { transform: HeaderTransformFn } | undefined): HeaderTransformFn | undefined {
+function parseTransform(fnOrString: HeaderTransformFn | string | { transform: HeaderTransformFn } | undefined): HeaderTransformFn | undefined {
   if (!fnOrString) return undefined;
+  if (typeof fnOrString === 'function') {
+    return fnOrString;
+  }
   if (typeof fnOrString === 'string') {
     // Try to parse as arrow function or function body
     try {

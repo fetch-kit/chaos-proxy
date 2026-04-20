@@ -1,9 +1,11 @@
 import bodyParser from 'koa-bodyparser';
 import type { Middleware, Context } from 'koa';
 
+export type BodyTransformFn = (body: unknown, ctx: Context) => unknown;
+
 export interface BodyTransformOptions {
-  request?: { transform: (body: unknown, ctx: Context) => unknown } | string;
-  response?: { transform: (body: unknown, ctx: Context) => unknown } | string;
+  request?: BodyTransformFn | { transform: BodyTransformFn } | string;
+  response?: BodyTransformFn | { transform: BodyTransformFn } | string;
 }
 
 function isTransformObject(opt: unknown): opt is { transform: (body: unknown, ctx: Context) => unknown } {
@@ -15,8 +17,11 @@ function isTransformObject(opt: unknown): opt is { transform: (body: unknown, ct
   );
 }
 
-function parseTransform(opt: { transform: (body: unknown, ctx: Context) => unknown } | string | undefined, which: string): ((body: unknown, ctx: Context) => unknown) | undefined {
+function parseTransform(opt: BodyTransformFn | { transform: BodyTransformFn } | string | undefined, which: string): BodyTransformFn | undefined {
   if (!opt) return undefined;
+  if (typeof opt === 'function') {
+    return opt;
+  }
   if (typeof opt === 'string') {
     try {
       if (opt.trim().startsWith('(')) {

@@ -19,11 +19,18 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "test": "vitest",
+    "test:ci": "vitest --run --coverage",
     "cli:start": "npm run build && node dist/cli.js",
     "test:cli": "npm run cli:start --",
     "dev": "ts-node --esm src/index.ts",
+    "obs:up": "docker compose -f docker/observability/docker-compose.yml up -d",
+    "obs:down": "docker compose -f docker/observability/docker-compose.yml down --remove-orphans",
+    "obs:logs": "docker compose -f docker/observability/docker-compose.yml logs -f otel-collector jaeger prometheus grafana",
+    "obs:ps": "docker compose -f docker/observability/docker-compose.yml ps",
+    "obs:validate": "docker compose -f docker/observability/docker-compose.yml config",
+    "obs:reset": "docker compose -f docker/observability/docker-compose.yml down -v --remove-orphans",
     "prepare": "husky install",
-    "prepublishOnly": "npm run build && npm run test"
+    "prepublishOnly": "npm run build && npm run test:ci"
   },
   "keywords": [
     "proxy",
@@ -45,6 +52,7 @@
   "type": "module",
   "dependencies": {
     "@koa/router": "^14.0.0",
+    "chaos-proxy": "^1.0.0",
     "koa": "^3.0.1",
     "koa-bodyparser": "^4.4.1",
     "koa-ratelimit": "^6.0.0",

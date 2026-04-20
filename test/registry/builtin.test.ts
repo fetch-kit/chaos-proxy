@@ -10,6 +10,7 @@ describe('registerBuiltins', () => {
       { latency: { ms: 100 } },
       { latencyRange: { minMs: 10, maxMs: 20 } },
       { failRandomly: { rate: 0.1 } },
+      { failNth: { n: 3, status: 500 } },
       { dropConnection: {} },
       { fail: { status: 500 } },
       { cors: { origin: '*' } },

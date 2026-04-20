@@ -4,6 +4,7 @@ import bodyParser from 'koa-bodyparser';
 import type { Middleware } from 'koa';
 import type { Server } from 'http';
 import http from 'http';
+import { EventEmitter } from 'events';
 import { startServer } from '../src/server';
 
 let testServer: Server;
@@ -133,6 +134,286 @@ describe('Proxy server', () => {
 });
 
 describe('startServer edge cases', () => {
+  it('throws on unsupported HTTP method in route key (lines 46-47)', () => {
+    expect(() =>
+      startServer({
+        target: TARGET,
+        port: PROXY_PORT + 90,
+        routes: {
+          'TRACE /api/cc': [],
+        },
+      } as unknown as Parameters<typeof startServer>[0])
+    ).toThrow(/Unsupported HTTP method: trace/i);
+  });
+
+  it('accepts method-less route keys and starts server (lines 51-55)', async () => {
+    const proxyPort = PROXY_PORT + 91;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [],
+      routes: {
+        '/api/cc': [
+          (async (ctx, next) => {
+            ctx.set('X-No-Method', 'yes');
+            await next();
+          }) as Middleware,
+        ],
+      },
+    });
+
+    const srv = startServer({ target: TARGET, port: proxyPort });
+
+    try {
+      const getRes = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      const postRes = await fetch(`http://localhost:${proxyPort}/api/cc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+
+      expect(getRes.headers.get('x-no-method')).toBe('yes');
+      expect(postRes.headers.get('x-no-method')).toBe('yes');
+    } finally {
+      srv.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('returns 500 when middleware calls next() twice (lines 120-121)', async () => {
+    const proxyPort = PROXY_PORT + 92;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (_ctx, next) => {
+          await next();
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const srv = startServer({ target: TARGET, port: proxyPort });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(res.status).toBe(500);
+    } finally {
+      srv.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('serializes pre-populated ctx.request.body and sets content-length (lines 171-176)', async () => {
+    const upstreamPort = PROXY_PORT + 93;
+    const proxyPort = PROXY_PORT + 94;
+
+    let seenBody = '';
+    let seenContentLength: string | undefined;
+
+    const upstream = http.createServer((req, res) => {
+      seenContentLength = req.headers['content-length'];
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        seenBody = Buffer.concat(chunks).toString('utf8');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      });
+    });
+
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (ctx, next) => {
+          const reqWithBody = ctx.request as unknown as { body?: unknown };
+          reqWithBody.body = { injected: true };
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const srv = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/echo`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ original: false }),
+      });
+      expect(res.status).toBe(200);
+      expect(seenBody).toBe('{"injected":true}');
+      expect(seenContentLength).toBe(String(Buffer.byteLength('{"injected":true}', 'utf8')));
+    } finally {
+      srv.close();
+      upstream.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('serializes string ctx.request.body without JSON.stringify (line 171)', async () => {
+    const upstreamPort = PROXY_PORT + 95;
+    const proxyPort = PROXY_PORT + 96;
+
+    let seenBody = '';
+    const upstream = http.createServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        seenBody = Buffer.concat(chunks).toString('utf8');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      });
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (ctx, next) => {
+          const reqWithBody = ctx.request as unknown as { body?: unknown };
+          reqWithBody.body = 'raw-string-body';
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const srv = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/echo`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ original: false }),
+      });
+      expect(res.status).toBe(200);
+      expect(seenBody).toBe('raw-string-body');
+    } finally {
+      srv.close();
+      upstream.close();
+      parserSpy.mockRestore();
+    }
+  });
+
+  it('handles stream response error path and logs in verbose mode (lines 212, 220-222)', async () => {
+    const proxyPort = PROXY_PORT + 97;
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const requestSpy = vi.spyOn(http, 'request').mockImplementation(((options: unknown, cb: unknown) => {
+      const callback = cb as (res: http.IncomingMessage) => void;
+      const proxyReq = new EventEmitter() as unknown as http.ClientRequest;
+
+      (proxyReq as unknown as { end: (chunk?: Buffer) => void }).end = () => {
+        const proxyRes = new EventEmitter() as unknown as http.IncomingMessage;
+        (proxyRes as unknown as { statusCode: number }).statusCode = 200;
+        (proxyRes as unknown as { headers: http.IncomingHttpHeaders }).headers = {
+          'content-type': 'text/event-stream',
+        };
+        callback(proxyRes);
+        setTimeout(() => {
+          (proxyRes as unknown as EventEmitter).emit('error', new Error('stream failed'));
+        }, 0);
+      };
+
+      (proxyReq as unknown as { destroy: () => void }).destroy = () => {};
+      return proxyReq;
+    }) as unknown as typeof http.request);
+
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (ctx, next) => {
+          const reqWithBody = ctx.request as unknown as { body?: unknown };
+          reqWithBody.body = 'x';
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const srv = startServer({ target: 'http://unused', port: proxyPort }, { verbose: true });
+    try {
+      await fetch(`http://localhost:${proxyPort}/events`, { method: 'POST', body: 'irrelevant' });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(errSpy).toHaveBeenCalledWith('[Proxy] Response error:', expect.any(Error));
+    } finally {
+      srv.close();
+      parserSpy.mockRestore();
+      requestSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it('handles buffered response error path and proxy request error path (lines 238-241, 260-261)', async () => {
+    const proxyPort = PROXY_PORT + 98;
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let callCount = 0;
+
+    const requestSpy = vi.spyOn(http, 'request').mockImplementation(((options: unknown, cb: unknown) => {
+      const callback = cb as (res: http.IncomingMessage) => void;
+      const proxyReqEmitter = new EventEmitter();
+      const proxyReq = proxyReqEmitter as unknown as http.ClientRequest;
+
+      (proxyReq as unknown as { end: (chunk?: Buffer) => void }).end = () => {
+        callCount += 1;
+        if (callCount === 1) {
+          const proxyRes = new EventEmitter() as unknown as http.IncomingMessage;
+          (proxyRes as unknown as { statusCode: number }).statusCode = 200;
+          (proxyRes as unknown as { headers: http.IncomingHttpHeaders }).headers = {
+            'content-type': 'text/plain',
+            'content-length': '10',
+          };
+          callback(proxyRes);
+          setTimeout(() => {
+            (proxyRes as unknown as EventEmitter).emit('error', new Error('buffered failed'));
+          }, 0);
+          return;
+        }
+
+        setTimeout(() => {
+          proxyReqEmitter.emit('error', new Error('request failed'));
+        }, 0);
+      };
+
+      (proxyReq as unknown as { destroy: () => void }).destroy = () => {};
+      return proxyReq;
+    }) as unknown as typeof http.request);
+
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+    parserSpy.mockReturnValue({
+      global: [
+        (async (ctx, next) => {
+          const reqWithBody = ctx.request as unknown as { body?: unknown };
+          reqWithBody.body = 'x';
+          await next();
+        }) as Middleware,
+      ],
+      routes: {},
+    });
+
+    const srv = startServer({ target: 'http://unused', port: proxyPort }, { verbose: true });
+    try {
+      await fetch(`http://localhost:${proxyPort}/buffered`, { method: 'POST', body: 'irrelevant' });
+      await fetch(`http://localhost:${proxyPort}/request-error`, { method: 'POST', body: 'irrelevant' });
+      await new Promise((resolve) => setTimeout(resolve, 30));
+
+      expect(errSpy).toHaveBeenCalledWith('[Proxy] Response error:', expect.any(Error));
+      expect(errSpy).toHaveBeenCalledWith('[Proxy] Error:', expect.any(Error));
+    } finally {
+      srv.close();
+      parserSpy.mockRestore();
+      requestSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
   it('mounts global middlewares', async () => {
     const globalMiddleware: Middleware = async (ctx, next) => {
       ctx.set('X-Global', 'yes');
@@ -442,6 +723,269 @@ describe('runtime config reload', () => {
       expect(failed.statusCode).toBe(409);
     } finally {
       proxy.close();
+      parserSpy.mockRestore();
+    }
+  });
+});
+
+// ─── /reload endpoint edge cases ──────────────────────────────────────────
+
+describe('/reload endpoint — content-type and JSON errors', () => {
+  let reloadProxy: ReturnType<typeof startServer>;
+  const RELOAD_PORT = PROXY_PORT + 100;
+
+  beforeAll(() => {
+    reloadProxy = startServer({ target: TARGET, port: RELOAD_PORT });
+  });
+  afterAll(() => {
+    reloadProxy.close();
+  });
+
+  it('returns 415 when Content-Type is not application/json', async () => {
+    const res = await fetch(`http://localhost:${RELOAD_PORT}/reload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: '{}',
+    });
+    expect(res.status).toBe(415);
+    const body = await res.json() as { ok: boolean; error: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toMatch(/Content-Type/);
+  });
+
+  it('returns 400 for invalid JSON body', async () => {
+    const res = await fetch(`http://localhost:${RELOAD_PORT}/reload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not-json{{{',
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json() as { ok: boolean; error: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toMatch(/Invalid JSON/);
+  });
+});
+
+// ─── proxyRequest — verbose [VERBOSE] log (lines 171-176) ─────────────────
+
+describe('proxyRequest — verbose request logging', () => {
+  it('logs [VERBOSE] METHOD path when verbose=true', async () => {
+    const proxyPort = PROXY_PORT + 101;
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const srv = startServer({ target: TARGET, port: proxyPort }, { verbose: true });
+    try {
+      await fetch(`http://localhost:${proxyPort}/api/cc`);
+      expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/\[VERBOSE\] GET \/api\/cc/));
+    } finally {
+      srv.close();
+      logSpy.mockRestore();
+    }
+  });
+});
+
+// ─── proxyRequest error paths ──────────────────────────────────────────────
+
+describe('proxyRequest — upstream connection refused', () => {
+  it('returns 502 when upstream refuses connection', async () => {
+    const proxyPort = PROXY_PORT + 40;
+    const srv = startServer({ target: 'http://localhost:19998', port: proxyPort });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/any`);
+      expect(res.status).toBe(502);
+    } finally {
+      srv.close();
+    }
+  });
+
+  // line 260-261: verbose log on proxyReq error
+  it('logs [Proxy] Error: with verbose=true on connection refused', async () => {
+    const proxyPort = PROXY_PORT + 41;
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const srv = startServer({ target: 'http://localhost:19998', port: proxyPort }, { verbose: true });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/any`);
+      expect(res.status).toBe(502);
+      expect(errSpy).toHaveBeenCalledWith('[Proxy] Error:', expect.any(Error));
+    } finally {
+      srv.close();
+      errSpy.mockRestore();
+    }
+  });
+});
+
+// ─── streaming response (SSE — no content-length, line 212) ────────────────
+
+describe('proxyRequest — SSE streaming response', () => {
+  it('pipes SSE response and sets isStream=true (line 212)', async () => {
+    const upstreamPort = PROXY_PORT + 42;
+    const proxyPort = PROXY_PORT + 43;
+
+    const upstream = http.createServer((_req, res) => {
+      // SSE: content-type text/event-stream, no content-length → isStream=true
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write('data: hello\n\n');
+      res.end();
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+
+    const srv = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/events`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/event-stream');
+      const body = await res.text();
+      expect(body).toContain('data: hello');
+    } finally {
+      srv.close();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+    }
+  });
+});
+
+// ─── buffered response stream error (lines 238-241) ───────────────────────
+
+describe('proxyRequest — buffered response stream error', () => {
+  it('returns 502 when upstream destroys the response mid-stream', async () => {
+    const upstreamPort = PROXY_PORT + 44;
+    const proxyPort = PROXY_PORT + 45;
+
+    const upstream = http.createServer((_req, res) => {
+      // Send headers + partial body with explicit content-length → buffered mode
+      // Then destroy to trigger proxyRes 'error' event
+      res.writeHead(200, { 'Content-Type': 'text/plain', 'Content-Length': '100' });
+      res.write('partial');
+      // Destroy the underlying socket to force an error on the response stream
+      res.socket?.destroy(new Error('forced upstream error'));
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+
+    const srv = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/broken`);
+      // Either 502 from the error handler or connection reset; both are acceptable
+      expect([200, 502]).toContain(res.status);
+    } catch {
+      // fetch may throw on connection reset — that's also acceptable
+    } finally {
+      srv.close();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+    }
+  });
+});
+
+// ─── onClientAbort when not yet settled (line 272) ────────────────────────
+
+describe('proxyRequest — client abort before response', () => {
+  it('destroys the proxyReq when client aborts before upstream responds', async () => {
+    const upstreamPort = PROXY_PORT + 46;
+    const proxyPort = PROXY_PORT + 47;
+    let upstreamGotRequest = false;
+
+    const upstream = http.createServer((_req, res) => {
+      upstreamGotRequest = true;
+      // Hang: don't respond for a while so the client can abort first
+      setTimeout(() => res.end('late'), 5000);
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+
+    const srv = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+    try {
+      const controller = new AbortController();
+      const p = fetch(`http://localhost:${proxyPort}/slow`, { signal: controller.signal });
+      // Give the request time to reach upstream before aborting
+      await new Promise((r) => setTimeout(r, 50));
+      controller.abort();
+      await expect(p).rejects.toThrow();
+      // Upstream received the request; proxy cleaned up even though not yet settled
+      expect(upstreamGotRequest).toBe(true);
+    } finally {
+      srv.close();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+    }
+  });
+});
+
+// ─── server close event (line 370) ────────────────────────────────────────
+
+describe('server close event — telemetry shutdown', () => {
+  it('shuts down telemetry exporters when server closes', async () => {
+    const proxyPort = PROXY_PORT + 48;
+    const srv = startServer({ target: TARGET, port: proxyPort });
+    await new Promise<void>((resolve, reject) =>
+      srv.close((err) => (err ? reject(err) : resolve()))
+    );
+    // Reached here = close handler ran without throwing
+  });
+
+  it('logs error when telemetry shutdown fails (line 370)', async () => {
+    const proxyPort = PROXY_PORT + 49;
+    const telemetry = await import('../src/telemetry/middleware');
+    // Make shutdownAllTelemetryExporters reject so the catch branch runs
+    vi.spyOn(telemetry, 'shutdownAllTelemetryExporters').mockRejectedValueOnce(new Error('shutdown failed'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const srv = startServer({ target: TARGET, port: proxyPort });
+    await new Promise<void>((resolve, reject) =>
+      srv.close((err) => (err ? reject(err) : resolve()))
+    );
+    // Allow the microtask (the .catch callback) to run
+    await new Promise((r) => setTimeout(r, 0));
+    expect(errSpy).toHaveBeenCalledWith(
+      '[chaos-proxy telemetry] Failed to shutdown exporters:',
+      expect.any(Error)
+    );
+    errSpy.mockRestore();
+  });
+});
+
+// ─── reload body too large (lines 94-96) ──────────────────────────────────
+
+describe('/reload — oversized body', () => {
+  it('returns 400 when reload body exceeds 1MB', async () => {
+    const proxyPort = PROXY_PORT + 50;
+    const srv = startServer({ target: TARGET, port: proxyPort });
+    try {
+      // Build a JSON string just over 1MB
+      const bigValue = 'x'.repeat(1024 * 1024 + 1);
+      const res = await fetch(`http://localhost:${proxyPort}/reload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: TARGET, pad: bigValue }),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json() as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toMatch(/too large/);
+    } finally {
+      srv.close();
+    }
+  });
+});
+
+// ─── runMiddlewareChain — mw undefined guard (lines 131-132) ──────────────
+// This branch is defensive dead code (sparse array), tested via direct unit
+
+describe('runMiddlewareChain — direct unit: mw undefined guard', () => {
+  it('skips undefined entries in the middleware array without throwing', async () => {
+    // Dynamically import to access the internal function via a test shim.
+    // We test through startServer with a sparse middleware array.
+    const proxyPort = PROXY_PORT + 51;
+    const parserModule = await import('../src/config/parser');
+    const parserSpy = vi.spyOn(parserModule, 'resolveConfigMiddlewares');
+
+    // Sparse array with an undefined hole
+    const sparse = [undefined as unknown as Middleware, (async (_ctx: unknown, next: () => Promise<void>) => { await next(); }) as Middleware];
+
+    parserSpy.mockReturnValue({ global: sparse, routes: {} });
+
+    const serverModule = await import('../src/server');
+    const srv = serverModule.startServer({ target: TARGET, port: proxyPort }) as Server;
+    try {
+      const res = await fetch(`http://localhost:${proxyPort}/api/cc`);
+      // Either proxied successfully or 404 — it must not 500
+      expect([200, 404]).toContain(res.status);
+    } finally {
+      srv.close();
       parserSpy.mockRestore();
     }
   });

@@ -5,6 +5,7 @@ import { parseConfig } from './parser';
 export type ChaosConfig = {
   target: string;
   port?: number;
+  otel?: unknown;
   global?: unknown[];
   routes?: Record<string, unknown[]>;
 };
