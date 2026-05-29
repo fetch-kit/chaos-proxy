@@ -29,7 +29,7 @@
     "obs:ps": "docker compose -f docker/observability/docker-compose.yml ps",
     "obs:validate": "docker compose -f docker/observability/docker-compose.yml config",
     "obs:reset": "docker compose -f docker/observability/docker-compose.yml down -v --remove-orphans",
-    "prepare": "husky install",
+    "prepare": "husky",
     "prepublishOnly": "npm run build && npm run test:ci"
   },
   "keywords": [
@@ -40,11 +40,13 @@
     "typescript",
     "cli"
   ],
-  "author": "Gabor Koos <gkoos@users.noreply.github.com>",
+  "author": "Gabor Koos <gabor@gaborkoos.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fetch-kit/chaos-proxy.git"
+    "url": "git+https://github.com/fetch-kit/chaos-proxy.git"
   },
+  "homepage": "https://github.com/fetch-kit/chaos-proxy#readme",
+  "bugs": "https://github.com/fetch-kit/chaos-proxy/issues",
   "publishConfig": {
     "access": "public"
   },
