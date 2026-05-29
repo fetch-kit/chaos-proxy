@@ -29,6 +29,8 @@
     "obs:ps": "docker compose -f docker/observability/docker-compose.yml ps",
     "obs:validate": "docker compose -f docker/observability/docker-compose.yml config",
     "obs:reset": "docker compose -f docker/observability/docker-compose.yml down -v --remove-orphans",
+    "changeset": "changeset",
+    "version": "changeset version",
     "prepare": "husky",
     "prepublishOnly": "npm run build && npm run test:ci"
   },
@@ -54,7 +56,6 @@
   "type": "module",
   "dependencies": {
     "@koa/router": "^14.0.0",
-    "chaos-proxy": "^1.0.0",
     "koa": "^3.0.1",
     "koa-bodyparser": "^4.4.1",
     "koa-ratelimit": "^6.0.0",
