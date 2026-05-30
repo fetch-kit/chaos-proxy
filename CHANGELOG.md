@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 3.3.0
+
+### Minor Changes
+
+- f6cef45: Added
+  - failFirstN middleware
+
 ## 3.2.1
 
 ### Patch Changes
