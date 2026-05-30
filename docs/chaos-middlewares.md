@@ -30,6 +30,7 @@ When streamed, `ctx.state.isStream` is set to `true`.
 - `latencyRange`: delays every request by a random value. Config: `{ minMs, maxMs, seed? }`.
 - `fail`: always responds with an error. Config: `{ status?, body? }`.
 - `failRandomly`: fails with probability `rate`. Config: `{ rate, status?, body?, seed? }`.
+- `failFirstN`: fails the first N requests, then passes through. Config: `{ n, status?, body? }`.
 - `failNth`: fails every nth request, then resets the counter. Config: `{ n, status?, body? }`.
 - `dropConnection`: randomly closes the connection. Config: `{ prob?, seed? }`. Default `prob` is `1` (always drop).
 - `rateLimit`: enforces fixed-window request limits. Config: `{ limit, windowMs, key? }`. When `key` is a string it is treated as a header name, falling back to `ctx.ip`, then `'unknown'`. When omitted, defaults to IP.
@@ -49,6 +50,9 @@ global:
   - latency: 100        # scalar milliseconds
   - failRandomly:
       rate: 0.1
+      status: 503
+  - failFirstN:
+      n: 3
       status: 503
   - failNth:
       n: 5

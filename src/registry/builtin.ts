@@ -5,6 +5,7 @@ import { cors } from '../middlewares/cors';
 import { dropConnection } from '../middlewares/dropConnection';
 import { headerTransform } from '../middlewares/headerTransform';
 import { fail } from '../middlewares/fail';
+import { failFirstN } from '../middlewares/failFirstN';
 import { failNth } from '../middlewares/failNth';
 import { failRandomly } from '../middlewares/failRandomly';
 import { latency } from '../middlewares/latency';
@@ -28,6 +29,9 @@ export function registerBuiltins() {
     dropConnection(opts as { prob?: number; seed?: number | string })
   );
   registerMiddleware('fail', (opts) => fail(opts as { status?: number; body?: string }));
+  registerMiddleware('failFirstN', (opts) =>
+    failFirstN(opts as { n: number; status?: number; body?: string })
+  );
   registerMiddleware('failNth', (opts) =>
     failNth(opts as { n: number; status?: number; body?: string })
   );

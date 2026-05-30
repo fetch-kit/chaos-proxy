@@ -1,0 +1,5 @@
+global:
+  - failFirstN:
+      n: 3
+      status: 503
+      body: 'Service temporarily unavailable'
