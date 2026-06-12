@@ -32,7 +32,7 @@ function parseTransform(opt: BodyTransformFn | { transform: BodyTransformFn } | 
         return new Function('body', 'ctx', opt) as (body: unknown, ctx: Context) => unknown;
       }
     } catch (e) {
-      throw new Error(`Failed to evaluate bodyTransform ${which} function string: ${(e as Error).message}`);
+      throw new Error(`Failed to evaluate bodyTransform ${which} function string: ${(e as Error).message}`, { cause: e });
     }
   } else if (isTransformObject(opt)) {
     return opt.transform;
