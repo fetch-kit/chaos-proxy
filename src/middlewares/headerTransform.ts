@@ -21,7 +21,7 @@ function parseTransform(fnOrString: HeaderTransformFn | string | { transform: He
         return new Function('headers', 'ctx', fnOrString) as HeaderTransformFn;
       }
     } catch (e) {
-      throw new Error('Invalid headerTransform function string: ' + e);
+      throw new Error('Invalid headerTransform function string: ' + e, { cause: e });
     }
   }
   if (typeof fnOrString === 'object' && typeof fnOrString.transform === 'function') {
