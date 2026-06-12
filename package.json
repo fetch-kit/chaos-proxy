@@ -55,7 +55,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@koa/router": "^14.0.0",
+    "@koa/router": "^15.6.0",
     "koa": "^3.0.1",
     "koa-bodyparser": "^4.4.1",
     "koa-ratelimit": "^6.0.0",
