@@ -104,7 +104,7 @@ async function readJsonBody(ctx: Context): Promise<unknown> {
   try {
     return JSON.parse(raw);
   } catch (e) {
-    throw new Error(`Invalid JSON body: ${(e as Error).message}`);
+    throw new Error(`Invalid JSON body: ${(e as Error).message}`, { cause: e });
   }
 }
 

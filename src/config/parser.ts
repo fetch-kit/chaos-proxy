@@ -39,7 +39,7 @@ export function parseConfig(yamlString: string): ChaosConfig {
   try {
     parsed = yaml.parse(yamlString);
   } catch (e) {
-    throw new Error(`YAML parse error: ${(e as Error).message}`);
+    throw new Error(`YAML parse error: ${(e as Error).message}`, { cause: e });
   }
   return validateConfigObject(parsed);
 }
