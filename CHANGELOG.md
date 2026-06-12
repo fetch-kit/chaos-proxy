@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 3.3.1
+
+### Patch Changes
+
+- 0484842: Dependencies
+  - Dependabot updates
+
 ## 3.3.0
 
 ### Minor Changes
