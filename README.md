@@ -6,6 +6,9 @@
 
 # Chaos Proxy
 
+
+> Part of the **[fetch-kit ecosystem](https://fetchkit.org)** - production-ready fetch utilities and chaos-testing tools.
+
 Chaos Proxy is a proxy server for injecting configurable network chaos (latency, failures, connection drops, rate-limiting, and transforms) into HTTP traffic.
 
 Use it via CLI or programmatically with ordered middleware chains (global and per-route).
