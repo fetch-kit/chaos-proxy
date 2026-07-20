@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { loadConfig, startServer } from './index';
+import { emitVerbose } from './logging/verbose';
 
 const args = process.argv.slice(2);
 let configPath = 'chaos.yaml';
@@ -23,10 +24,10 @@ for (let i = 0; i < args.length; i++) {
 
 try {
   const config = loadConfig(configPath);
-  if (verbose) {
-    console.log('Loaded config:', configPath);
-  }
-  startServer(config, { verbose });
+  emitVerbose(verbose, 'verbose.config.loaded', {
+    config_path: configPath,
+  });
+  startServer(config, { verbose, configPath });
 } catch (err) {
   const error = err as Error;
   if (error.message?.includes('Config file not found')) {

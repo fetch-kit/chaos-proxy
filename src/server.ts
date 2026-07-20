@@ -7,6 +7,12 @@ import Router from '@koa/router';
 import type { ChaosConfig } from './config/loader';
 import { resolveConfigMiddlewares, validateConfigObject } from './config/parser';
 import { shutdownAllTelemetryExporters } from './telemetry';
+import {
+  createRequestId,
+  emitVerbose,
+  extractTraceId,
+  redactUrlQuery,
+} from './logging/verbose';
 
 type RuntimeState = {
   config: ChaosConfig;
@@ -17,6 +23,11 @@ type RuntimeState = {
 type ReloadResult =
   | { ok: true; version: number; reloadMs: number }
   | { ok: false; error: string; statusCode: number; version: number; reloadMs: number };
+
+type StartServerOptions = {
+  verbose?: boolean;
+  configPath?: string;
+};
 
 export type ChaosProxyServer = http.Server & {
   reloadConfig: (newConfigInput: unknown) => Promise<ReloadResult>;
@@ -141,11 +152,8 @@ async function proxyRequest(
   target: string,
   httpAgent: http.Agent,
   httpsAgent: https.Agent,
-  options?: { verbose?: boolean }
+  options?: StartServerOptions
 ): Promise<void> {
-  if (options?.verbose) {
-    console.log(`[VERBOSE] ${ctx.method} ${ctx.url}`);
-  }
   const targetUrl = new URL(target + ctx.url);
   const isHttps = targetUrl.protocol === 'https:';
   const proxyModule = isHttps ? https : http;
@@ -217,7 +225,12 @@ async function proxyRequest(
         // Settle immediately; Koa will handle async streaming.
         ctx.body = proxyRes;
         proxyRes.once('error', (err) => {
-          if (options?.verbose) console.error('[Proxy] Response error:', err);
+          emitVerbose(options?.verbose, 'verbose.error', {
+            req_id: String(ctx.state.verboseRequestId || 'unknown'),
+            class: 'upstream_response_error',
+            status: 502,
+            message: (err as Error).message,
+          }, 'ERROR');
           ctx.status = 502;
           ctx.body = (err as Error).message;
         });
@@ -235,7 +248,12 @@ async function proxyRequest(
           settle();
         });
         proxyRes.on('error', (err) => {
-          if (options?.verbose) console.error('[Proxy] Response error:', err);
+          emitVerbose(options?.verbose, 'verbose.error', {
+            req_id: String(ctx.state.verboseRequestId || 'unknown'),
+            class: 'upstream_response_error',
+            status: 502,
+            message: (err as Error).message,
+          }, 'ERROR');
           ctx.status = 502;
           ctx.body = (err as Error).message;
           settle();
@@ -244,9 +262,12 @@ async function proxyRequest(
     });
 
     proxyReq.on('error', (err) => {
-      if (options?.verbose) {
-        console.error('[Proxy] Error:', err);
-      }
+      emitVerbose(options?.verbose, 'verbose.error', {
+        req_id: String(ctx.state.verboseRequestId || 'unknown'),
+        class: 'upstream_request_error',
+        status: 502,
+        message: (err as Error).message,
+      }, 'ERROR');
       ctx.status = 502;
       ctx.body = (err as Error).message;
       settle();
@@ -276,7 +297,7 @@ async function proxyRequest(
   });
 }
 
-export function startServer(config: ChaosConfig, options?: { verbose?: boolean }) {
+export function startServer(config: ChaosConfig, options?: StartServerOptions) {
   const app = new Koa();
   const httpAgent = new http.Agent({ keepAlive: true });
   const httpsAgent = new https.Agent({ keepAlive: true });
@@ -285,6 +306,13 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
 
   const reloadConfig = async (newConfigInput: unknown): Promise<ReloadResult> => {
     if (isReloading) {
+      emitVerbose(options?.verbose, 'verbose.reload.end', {
+        ok: false,
+        old_version: runtimeState.version,
+        new_version: runtimeState.version,
+        reload_ms: 0,
+        error: 'Reload already in progress',
+      }, 'WARN');
       return {
         ok: false,
         error: 'Reload already in progress',
@@ -296,23 +324,41 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
 
     isReloading = true;
     const startedAt = Date.now();
+    emitVerbose(options?.verbose, 'verbose.reload.begin', {
+      current_version: runtimeState.version,
+    });
     try {
       // Yield once so overlapping reload requests can observe the in-progress lock.
       await Promise.resolve();
       const nextState = buildRuntimeState(newConfigInput, runtimeState.version + 1);
       runtimeState = nextState;
+      const reloadMs = Date.now() - startedAt;
+      emitVerbose(options?.verbose, 'verbose.reload.end', {
+        ok: true,
+        old_version: runtimeState.version - 1,
+        new_version: runtimeState.version,
+        reload_ms: reloadMs,
+      });
       return {
         ok: true,
         version: runtimeState.version,
-        reloadMs: Date.now() - startedAt,
+        reloadMs,
       };
     } catch (e) {
+      const reloadMs = Date.now() - startedAt;
+      emitVerbose(options?.verbose, 'verbose.reload.end', {
+        ok: false,
+        old_version: runtimeState.version,
+        new_version: runtimeState.version,
+        reload_ms: reloadMs,
+        error: (e as Error).message,
+      }, 'WARN');
       return {
         ok: false,
         error: (e as Error).message,
         statusCode: 400,
         version: runtimeState.version,
-        reloadMs: Date.now() - startedAt,
+        reloadMs,
       };
     } finally {
       isReloading = false;
@@ -353,17 +399,61 @@ export function startServer(config: ChaosConfig, options?: { verbose?: boolean }
     }
 
     const snapshot = runtimeState;
-    ctx.state.proxyTarget = snapshot.config.target;
-    await runMiddlewareChain(ctx, snapshot.chaosChain, async () => {
-      await proxyRequest(ctx, snapshot.config.target, httpAgent, httpsAgent, options);
+    const requestId = createRequestId();
+    const startedAt = Date.now();
+    const redactedPath = redactUrlQuery(ctx.url);
+    ctx.state.verboseRequestId = requestId;
+    emitVerbose(options?.verbose, 'verbose.request.begin', {
+      req_id: requestId,
+      trace_id: extractTraceId(ctx.req.headers),
+      method: ctx.method,
+      path: redactedPath,
+      target: snapshot.config.target,
+      version: snapshot.version,
+      middleware_count: snapshot.chaosChain.length,
     });
+
+    ctx.state.proxyTarget = snapshot.config.target;
+    try {
+      await runMiddlewareChain(ctx, snapshot.chaosChain, async () => {
+        await proxyRequest(ctx, snapshot.config.target, httpAgent, httpsAgent, options);
+      });
+    } catch (error) {
+      emitVerbose(options?.verbose, 'verbose.error', {
+        req_id: requestId,
+        class: 'middleware_chain_error',
+        status: 500,
+        message: (error as Error).message,
+      }, 'ERROR');
+      throw error;
+    } finally {
+      const status = ctx.status || 500;
+      emitVerbose(options?.verbose, 'verbose.request.end', {
+        req_id: requestId,
+        method: ctx.method,
+        path: redactedPath,
+        status,
+        duration_ms: Date.now() - startedAt,
+        result: status >= 500 ? 'error' : status >= 400 ? 'client_error' : 'ok',
+      }, status >= 500 ? 'WARN' : 'INFO');
+    }
   });
 
   const server = app.listen(config.port ?? 5000, () => {
     console.log(`Chaos Proxy listening on port ${config.port ?? 5000} -> target ${config.target}`);
+    emitVerbose(options?.verbose, 'verbose.startup', {
+      config_path: options?.configPath || 'chaos.yaml',
+      listen_port: config.port ?? 5000,
+      target: config.target,
+      otel_enabled: Boolean(config.otel),
+    });
   });
 
   server.on('close', () => {
+    emitVerbose(options?.verbose, 'verbose.shutdown', {
+      signal: 'server.close',
+      in_flight: 0,
+    });
     httpAgent.destroy();
     httpsAgent.destroy();
     shutdownAllTelemetryExporters().catch((err: unknown) => {

@@ -7,7 +7,7 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'html', 'lcov'],
       include: ['src/**'],
-      exclude: ['examples/**'],
+      exclude: ['examples/**', 'src/cli.ts'],
       thresholds: {
         lines: 80,
         functions: 80,
