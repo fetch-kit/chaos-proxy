@@ -341,7 +341,9 @@ describe('startServer edge cases', () => {
     try {
       await fetch(`http://localhost:${proxyPort}/events`, { method: 'POST', body: 'irrelevant' });
       await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(errSpy).toHaveBeenCalledWith('[Proxy] Response error:', expect.any(Error));
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('event=verbose.error')
+      );
     } finally {
       srv.close();
       parserSpy.mockRestore();
@@ -404,8 +406,12 @@ describe('startServer edge cases', () => {
       await fetch(`http://localhost:${proxyPort}/request-error`, { method: 'POST', body: 'irrelevant' });
       await new Promise((resolve) => setTimeout(resolve, 30));
 
-      expect(errSpy).toHaveBeenCalledWith('[Proxy] Response error:', expect.any(Error));
-      expect(errSpy).toHaveBeenCalledWith('[Proxy] Error:', expect.any(Error));
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('class=upstream_response_error')
+      );
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('class=upstream_request_error')
+      );
     } finally {
       srv.close();
       parserSpy.mockRestore();
@@ -468,7 +474,9 @@ describe('startServer edge cases', () => {
       { verbose: true }
     ) as Server;
     await fetch(`http://localhost:${PROXY_PORT + 4}/api/cc`);
-    expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/\[VERBOSE\] GET \/api\/cc/));
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('event=verbose.request.begin')
+    );
     app.close();
     logSpy.mockRestore();
   });
@@ -766,16 +774,18 @@ describe('/reload endpoint — content-type and JSON errors', () => {
   });
 });
 
-// ─── proxyRequest — verbose [VERBOSE] log (lines 171-176) ─────────────────
+// ─── proxyRequest — verbose request logging ───────────────────────────────
 
 describe('proxyRequest — verbose request logging', () => {
-  it('logs [VERBOSE] METHOD path when verbose=true', async () => {
+  it('logs request begin event when verbose=true', async () => {
     const proxyPort = PROXY_PORT + 101;
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const srv = startServer({ target: TARGET, port: proxyPort }, { verbose: true });
     try {
       await fetch(`http://localhost:${proxyPort}/api/cc`);
-      expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/\[VERBOSE\] GET \/api\/cc/));
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('event=verbose.request.begin')
+      );
     } finally {
       srv.close();
       logSpy.mockRestore();
@@ -798,14 +808,16 @@ describe('proxyRequest — upstream connection refused', () => {
   });
 
   // line 260-261: verbose log on proxyReq error
-  it('logs [Proxy] Error: with verbose=true on connection refused', async () => {
+  it('logs verbose error event on connection refused', async () => {
     const proxyPort = PROXY_PORT + 41;
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const srv = startServer({ target: 'http://localhost:19998', port: proxyPort }, { verbose: true });
     try {
       const res = await fetch(`http://localhost:${proxyPort}/any`);
       expect(res.status).toBe(502);
-      expect(errSpy).toHaveBeenCalledWith('[Proxy] Error:', expect.any(Error));
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('class=upstream_request_error')
+      );
     } finally {
       srv.close();
       errSpy.mockRestore();

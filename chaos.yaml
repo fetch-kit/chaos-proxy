@@ -1,0 +1,31 @@
+target: "https://jsonplaceholder.typicode.com"
+port: 5000
+
+global:
+  # Add random latency to every request.
+  - latencyRange:
+      minMs: 40
+      maxMs: 300
+
+  # Small chance to fail any request.
+  - failRandomly:
+      rate: 0.08
+      status: 503
+      body: "Injected random failure from chaos-proxy"
+
+routes:
+  # More aggressive chaos on post detail fetches.
+  "GET /posts/:id":
+    - failRandomly:
+        rate: 0.2
+        status: 500
+        body: "Random route-specific failure"
+    - dropConnection:
+        prob: 0.03
+
+  # Light throttling for comment lists to simulate slower links.
+  "GET /comments":
+    - throttle:
+        rate: 45000
+        chunkSize: 4096
+        burst: 8192
