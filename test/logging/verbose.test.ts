@@ -70,4 +70,17 @@ describe('logging/verbose', () => {
     expect(id.startsWith('rq_')).toBe(true);
     expect(id.length).toBe(11);
   });
+
+  it('replaces control characters in field values with spaces', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    emitVerbose(true, 'verbose.request.begin', {
+      path: 'a\u0007b\u007fc\td',
+    });
+
+    const line = String(logSpy.mock.calls[0]?.[0] ?? '');
+    expect(line).not.toContain('\u0007');
+    expect(line).not.toContain('\u007f');
+    expect(line).toContain('event=verbose.request.begin');
+  });
 });
