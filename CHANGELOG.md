@@ -1,5 +1,12 @@
 # chaos-proxy
 
+## 3.4.0
+
+### Minor Changes
+
+- d36d15b: Added
+  - verbose logging utility with structured events and sensitive data redaction
+
 ## 3.3.1
 
 ### Patch Changes
