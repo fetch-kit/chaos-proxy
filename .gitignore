@@ -22,6 +22,9 @@ coverage/
 *.log
 *.tmp
 
+# GitHub App private key (never commit)
+*.private-key.pem
+
 # Examples output
 examples/**/*.log
 examples/**/*.tmp
