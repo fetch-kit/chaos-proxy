@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseConfig, resolveConfigMiddlewares } from '../../src/config/parser';
+import {
+  parseConfig,
+  resolveConfigMiddlewares,
+  validateConfigObject,
+} from '../../src/config/parser';
 // ...existing code...
 // ...existing code...
 // ...existing code...
@@ -32,6 +36,18 @@ describe('parseConfig', () => {
 
   it('throws if otel is not object (lines 20-21)', () => {
     expect(() => parseConfig('target: "x"\notel: 123')).toThrow(/otel" must be an object/);
+  });
+
+  it('rejects arrays and nulls for optional collection fields', () => {
+    expect(() => validateConfigObject({ target: 'x', otel: [] })).toThrow(
+      /otel" must be an object/
+    );
+    expect(() => validateConfigObject({ target: 'x', global: null })).toThrow(
+      /global" must be an array/
+    );
+    expect(() => validateConfigObject({ target: 'x', routes: null })).toThrow(
+      /routes" must be a map/
+    );
   });
 
   it('throws if routes is not object', () => {

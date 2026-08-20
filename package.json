@@ -76,6 +76,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "execa": "^10.0.1",
+    "fast-check": "^4.9.0",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "jiti": "^2.5.1",

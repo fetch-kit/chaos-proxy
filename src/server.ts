@@ -242,9 +242,7 @@ async function proxyRequest(
         proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
         proxyRes.on('end', () => {
           const body = Buffer.concat(chunks);
-          if (body.length > 0) {
-            ctx.body = body;
-          }
+          ctx.body = body;
           settle();
         });
         proxyRes.on('error', (err) => {

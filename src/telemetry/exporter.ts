@@ -14,6 +14,7 @@ export class OtlpExporter {
   private config: Required<ExporterConfig>;
   private spans: Span[] = [];
   private flushTimer?: ReturnType<typeof setTimeout>;
+  private processShutdownHandler?: () => Promise<void>;
   private isShuttingDown = false;
 
   constructor(config: ExporterConfig) {
@@ -106,9 +107,11 @@ export class OtlpExporter {
 
   async shutdown(): Promise<void> {
     this.isShuttingDown = true;
+    this.removeShutdownHooks();
 
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
+      this.flushTimer = undefined;
     }
 
     await this.flush();
@@ -134,12 +137,20 @@ export class OtlpExporter {
 
   private setupShutdownHooks(): void {
     if (typeof process !== 'undefined' && process.on) {
-      const shutdownHandler = async () => {
+      this.processShutdownHandler = async () => {
         await this.shutdown();
       };
 
-      process.on('SIGTERM', shutdownHandler);
-      process.on('SIGINT', shutdownHandler);
+      process.on('SIGTERM', this.processShutdownHandler);
+      process.on('SIGINT', this.processShutdownHandler);
+    }
+  }
+
+  private removeShutdownHooks(): void {
+    if (this.processShutdownHandler && typeof process !== 'undefined' && process.off) {
+      process.off('SIGTERM', this.processShutdownHandler);
+      process.off('SIGINT', this.processShutdownHandler);
+      this.processShutdownHandler = undefined;
     }
   }
 
