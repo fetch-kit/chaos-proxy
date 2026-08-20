@@ -1,6 +1,6 @@
 {
   "name": "@fetchkit/chaos-proxy",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "Proxy and CLI for injecting network chaos (latency, failures, drops, rate-limiting) into API requests. Configurable via YAML.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -62,7 +62,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
+    "@changesets/cli": "^3.0.0",
     "@eslint/js": "^10.0.1",
     "@types/koa": "^3.0.0",
     "@types/koa__router": "^12.0.4",
@@ -75,7 +75,7 @@
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "execa": "^9.6.0",
+    "execa": "^10.0.1",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "jiti": "^2.5.1",
