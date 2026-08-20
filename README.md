@@ -1,8 +1,8 @@
-[![npm](https://img.shields.io/npm/v/chaos-proxy)](https://www.npmjs.com/package/chaos-proxy)
-[![Downloads](https://img.shields.io/npm/dm/chaos-proxy)](https://www.npmjs.com/package/chaos-proxy)
-[![GitHub stars](https://img.shields.io/github/stars/gkoos/chaos-proxy?style=social)](https://github.com/gkoos/chaos-proxy)
-[![Build](https://github.com/gkoos/chaos-proxy/actions/workflows/ci.yaml/badge.svg)](https://github.com/gkoos/chaos-proxy/actions)
-[![codecov](https://codecov.io/gh/gkoos/chaos-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/gkoos/chaos-proxy)
+[![npm](https://img.shields.io/npm/v/%40fetchkit%2Fchaos-proxy)](https://www.npmjs.com/package/@fetchkit/chaos-proxy)
+[![Downloads](https://img.shields.io/npm/dm/%40fetchkit%2Fchaos-proxy)](https://www.npmjs.com/package/@fetchkit/chaos-proxy)
+[![GitHub stars](https://img.shields.io/github/stars/fetch-kit/chaos-proxy?style=social)](https://github.com/fetch-kit/chaos-proxy)
+[![Build](https://github.com/fetch-kit/chaos-proxy/actions/workflows/ci.yaml/badge.svg)](https://github.com/fetch-kit/chaos-proxy/actions)
+[![codecov](https://codecov.io/gh/fetch-kit/chaos-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/fetch-kit/chaos-proxy)
 
 # Chaos Proxy
 
@@ -24,7 +24,7 @@ Use it via CLI or programmatically with ordered middleware chains (global and pe
 ## Installation
 
 ```bash
-npm install chaos-proxy
+npm install @fetchkit/chaos-proxy
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ npm install chaos-proxy
 ### CLI
 
 ```bash
-npx chaos-proxy --config chaos.yaml [--verbose]
+npx @fetchkit/chaos-proxy --config chaos.yaml [--verbose]
 ```
 
 ### Programmatic API

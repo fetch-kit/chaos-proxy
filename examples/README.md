@@ -9,7 +9,7 @@ This folder contains sample configs and scripts for using chaos-proxy.
 
 ## How to Run
 1. Install dependencies: `npm install`
-2. For most examples, run chaos-proxy with a config: `npx chaos-proxy --config ./examples/basic/config.yaml`
+2. For most examples, run chaos-proxy with a config: `npx @fetchkit/chaos-proxy --config ./examples/basic/config.yaml`
 3. Some examples include their own runner scripts (e.g., `run.js`). Refer to each subfolder's README for specific instructions and usage details.
 
 See each subfolder for more details and scripts.

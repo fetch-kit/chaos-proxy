@@ -29,7 +29,7 @@ See [hot-reload.md](./hot-reload.md) for the full endpoint reference and curl ex
 ## Preset Example
 
 ```bash
-npx chaos-proxy --config presets/mobile-3g.yaml
+npx @fetchkit/chaos-proxy --config presets/mobile-3g.yaml
 ```
 
 To combine presets, merge their `global` arrays into one config file and keep middleware in intended execution order.
