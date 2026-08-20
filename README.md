@@ -3,6 +3,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/fetch-kit/chaos-proxy?style=social)](https://github.com/fetch-kit/chaos-proxy)
 [![Build](https://github.com/fetch-kit/chaos-proxy/actions/workflows/ci.yaml/badge.svg)](https://github.com/fetch-kit/chaos-proxy/actions)
 [![codecov](https://codecov.io/gh/fetch-kit/chaos-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/fetch-kit/chaos-proxy)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/fetch-kit/chaos-proxy/badge)](https://scorecard.dev/viewer/?uri=github.com/fetch-kit/chaos-proxy)
 
 # Chaos Proxy
 
