@@ -4,22 +4,26 @@ import { resolveMiddleware } from '../registry/middleware';
 import type { ChaosConfig } from './loader';
 import type { Middleware } from 'koa';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export function validateConfigObject(parsed: unknown): ChaosConfig {
   // Basic validation
-  if (!parsed || typeof parsed !== 'object') {
+  if (!isRecord(parsed)) {
     throw new Error('Config must be a YAML object');
   }
-  const config = parsed as Record<string, unknown>;
+  const config = parsed;
   if (!config.target || typeof config.target !== 'string') {
     throw new Error('Config must include a string "target" field');
   }
-  if (config.global && !Array.isArray(config.global)) {
+  if (config.global !== undefined && !Array.isArray(config.global)) {
     throw new Error('Config "global" must be an array');
   }
-  if (config.otel && typeof config.otel !== 'object') {
+  if (config.otel !== undefined && !isRecord(config.otel)) {
     throw new Error('Config "otel" must be an object');
   }
-  if (config.routes && typeof config.routes !== 'object') {
+  if (config.routes !== undefined && !isRecord(config.routes)) {
     throw new Error('Config "routes" must be a map of path to array');
   }
   for (const [route, nodes] of Object.entries(config.routes || {})) {

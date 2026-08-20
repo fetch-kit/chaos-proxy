@@ -503,6 +503,26 @@ describe('startServer edge cases', () => {
 });
 
 describe('proxy transport behavior', () => {
+  it('preserves an empty successful upstream response body', async () => {
+    const upstreamPort = PROXY_PORT + 24;
+    const proxyPort = PROXY_PORT + 25;
+    const upstream = http.createServer((_req, res) => {
+      res.writeHead(200, { 'content-length': '0' });
+      res.end();
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+    const proxy = startServer({ target: `http://localhost:${upstreamPort}`, port: proxyPort });
+
+    try {
+      const response = await fetch(`http://localhost:${proxyPort}/empty`);
+      expect(response.status).toBe(200);
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.alloc(0));
+    } finally {
+      proxy.close();
+      upstream.close();
+    }
+  });
+
   it('reuses upstream sockets via keep-alive agent', async () => {
     const upstreamPort = PROXY_PORT + 20;
     const proxyPort = PROXY_PORT + 21;

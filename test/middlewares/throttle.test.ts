@@ -131,4 +131,39 @@ describe('throttle middleware', () => {
     expect(secondElapsed).toBeGreaterThanOrEqual(0.8);
     expect(secondElapsed).toBeGreaterThan(firstElapsed + 0.5);
   });
+
+  it('destroys an active source when the throttled response is cancelled', async () => {
+    let pushed = false;
+    const source = new Readable({
+      read() {
+        if (!pushed) {
+          pushed = true;
+          this.push(Buffer.from([0]));
+        }
+      },
+    });
+    const ctx = createMockCtx(source);
+    await throttle({ rate: 1, chunkSize: 1 })(ctx, async () => {});
+    const output = ctx.body as Readable;
+    output.resume();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    output.destroy();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(source.destroyed).toBe(true);
+  });
+
+  it('propagates source stream errors to the throttled response', async () => {
+    const source = new Readable({ read() {} });
+    const ctx = createMockCtx(source);
+    await throttle({ rate: 1 })(ctx, async () => {});
+    const output = ctx.body as Readable;
+    const errorPromise = new Promise<Error>((resolve) => output.once('error', resolve));
+    const sourceError = new Error('source failed');
+
+    source.destroy(sourceError);
+
+    await expect(errorPromise).resolves.toBe(sourceError);
+  });
 });

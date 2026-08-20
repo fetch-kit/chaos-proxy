@@ -110,6 +110,16 @@ export function throttle(opts: ThrottleOptions): Middleware {
       throttler.once('end', persistState);
       throttler.once('error', persistState);
     }
+    const onSourceError = (error: Error) => {
+      throttler.destroy(error);
+    };
+    bodyStream.once('error', onSourceError);
+    throttler.once('close', () => {
+      bodyStream.off('error', onSourceError);
+      if (!bodyStream.destroyed) {
+        bodyStream.destroy();
+      }
+    });
     ctx.body = bodyStream.pipe(throttler);
   };
 }

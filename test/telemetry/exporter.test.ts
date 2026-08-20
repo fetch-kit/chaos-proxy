@@ -29,6 +29,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -222,6 +223,24 @@ describe('OtlpExporter timer flush', () => {
 });
 
 describe('OtlpExporter shutdown hooks', () => {
+  it('removes its process signal listeners during shutdown', async () => {
+    vi.stubGlobal('fetch', makeFetch());
+    const sigtermBefore = process.listenerCount('SIGTERM');
+    const sigintBefore = process.listenerCount('SIGINT');
+    const exporter = new OtlpExporter({
+      endpoint: 'http://localhost:4318',
+      serviceName: 'svc',
+    });
+
+    expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore + 1);
+    expect(process.listenerCount('SIGINT')).toBe(sigintBefore + 1);
+
+    await exporter.shutdown();
+
+    expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore);
+    expect(process.listenerCount('SIGINT')).toBe(sigintBefore);
+  });
+
   it('invokes shutdown handler registered on process signal (lines 138-139)', async () => {
     vi.stubGlobal('fetch', makeFetch());
     const before = process.listeners('SIGTERM').length;
