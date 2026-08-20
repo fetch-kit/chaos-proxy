@@ -39,9 +39,8 @@ jobs:
     if: needs.check-version.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
-      attestations: write
     steps:
       - name: Generate app token
         id: app-token
