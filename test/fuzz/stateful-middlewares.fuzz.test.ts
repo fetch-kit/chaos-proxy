@@ -97,10 +97,7 @@ describe('stateful middleware fuzzing', () => {
           const secondSequence = Array.from({ length: count }, () => second());
 
           expect(firstSequence).toEqual(secondSequence);
-          for (const value of firstSequence) {
-            expect(value).toBeGreaterThanOrEqual(0);
-            expect(value).toBeLessThan(1);
-          }
+          expect(firstSequence.every((value) => value >= 0 && value < 1)).toBe(true);
         },
       ),
       { numRuns: 1_000 },
