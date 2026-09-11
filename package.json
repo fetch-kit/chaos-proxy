@@ -65,7 +65,7 @@
     "@changesets/cli": "^3.0.0",
     "@eslint/js": "^10.0.1",
     "@types/koa": "^3.0.0",
-    "@types/koa__router": "^12.0.4",
+    "@types/koa__router": "^15.0.0",
     "@types/koa-bodyparser": "^4.3.12",
     "@types/node": "^26.2.0",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
@@ -83,7 +83,7 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.44.0",
     "vitest": "^3.2.4"
   },
