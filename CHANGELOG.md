@@ -1,5 +1,13 @@
 # chaos-proxy
 
+## 3.4.3
+
+### Patch Changes
+
+- 0d85ce8: Dependencies
+
+  - `lru-cache` is now declared as a runtime dependency; the middleware imported it while relying on a transitive copy that only happened to be installed and bundled into `dist`
+
 ## 3.4.2
 
 ### Patch Changes
